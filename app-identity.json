@@ -1,0 +1,7 @@
+{
+  "name": "Expo Auth Starter",
+  "slug": "expo-auth-starter",
+  "scheme": "expoauthstarter",
+  "iosBundleIdentifier": "com.codewithnomi.expoauth",
+  "androidPackage": "com.codewithnomi.expoauth"
+}

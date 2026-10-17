@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1784195175660,
+      "tag": "0000_neat_arclight",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785609634225,
+      "tag": "0001_add_rate_limit",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786368698005,
+      "tag": "0002_faithful_prima",
+      "breakpoints": true
+    }
+  ]
+}
