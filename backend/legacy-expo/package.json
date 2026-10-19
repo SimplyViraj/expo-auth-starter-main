@@ -1,0 +1,33 @@
+{
+  "name": "expo-auth-legacy-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Preserved Drizzle server implementation and regression tests.",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test",
+    "auth:schema": "auth generate --config src/server/auth/auth-cli.ts --output src/server/db/auth-schema.ts --yes",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "@better-auth/core": "1.6.25",
+    "@better-auth/utils": "0.4.2",
+    "@opentelemetry/api": "1.9.1",
+    "@better-auth/drizzle-adapter": "1.6.23",
+    "@better-auth/expo": "1.6.23",
+    "better-auth": "1.6.23",
+    "drizzle-orm": "0.45.2",
+    "postgres": "3.4.9",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "26.1.0",
+    "auth": "1.6.23",
+    "dotenv": "17.4.2",
+    "drizzle-kit": "0.31.10",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

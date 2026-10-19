@@ -1,240 +1,78 @@
-# Expo Auth Starter
+# Expo mobile app and NestJS backend
 
-A production-ready Expo Router authentication starter using Better Auth, PostgreSQL, Drizzle, and Resend. It keeps navigation, product features, client integrations, and server security separate so providers can be replaced without rewriting screens.
+The repository now has two independent applications:
 
-Built by **Code with Nomi**.
+~~~text
+mobile/                 Expo Router frontend, screens, client services, assets, tests
+backend/                NestJS REST API, Prisma, PostgreSQL, backend tests
+backend/legacy-expo/    Preserved original Expo API/Drizzle implementation and tests
+shared/                 Public app identity and auth-policy JSON
+docs/                   Current architecture and provider documentation
+~~~
 
-**Jump to:** [Quick start](#quick-start) · [Native providers](#native-providers) · [Architecture](#how-it-fits-together) · [Customize](#customization-map) · [Test](#testing) · [Release](#before-production)
+The frontend remains the existing Expo application. Routes live in mobile/app; auth components, hooks, services, schemas, types, and utilities live in mobile/src/features/auth. Feedback components, client configuration, storage, providers, themes, and product features keep their own folders.
 
-## Included
+## Install
 
-- Email/password registration, verification, sign-in, logout, and two-step recovery
-- Native Google sign-in on Android/iOS and Sign in with Apple on iOS
-- Secure Better Auth sessions and protected Expo Router route groups
-- Required unique-username onboarding with optional App Lock setup
-- Account deletion with password or recent-session confirmation
-- Optional biometric app lock and system/light/dark appearance
-- Database-backed rate limiting, health checks, safe reporting, and tests
+Use Node 24 and npm. Each app owns its dependencies and lockfile:
 
-The product UI after authentication is intentionally small: one public resource and one private resource demonstrate how to build on the session.
+~~~sh
+npm --prefix mobile ci
+npm --prefix backend ci
+~~~
 
-## Stack
+The root package contains convenience commands only. It does not hoist the app dependencies.
 
-| Area | Reference choice |
-|---|---|
-| App and routing | Expo, React Native, TypeScript, Expo Router |
-| Authentication | Better Auth |
-| Database and ORM | Supabase/PostgreSQL, Drizzle |
-| Email | Resend |
-| Server state | TanStack Query |
-| Native identity | Nitro Google Sign-In, Expo Apple Authentication |
-| Local app lock | Expo Local Authentication |
+## Configure and run
 
-Supabase/PostgreSQL, Drizzle, and Resend are replaceable server boundaries, not UI dependencies.
+Use mobile/.env.example for public client/build values and backend/.env.example for server configuration. Existing environment values were preserved and separated during the restructure; the original environment is retained in the ignored backend/legacy-expo/.env.
 
-## Prerequisites
+Set mobile EXPO_PUBLIC_API_URL and backend BETTER_AUTH_URL to the same reachable API origin. For local development this is usually http://localhost:3000; a phone can use the computer's LAN IP. If using a tunnel, point the tunnel at Nest port 3000. Add the actual Expo web origin to backend AUTH_TRUSTED_ORIGINS.
 
-- Current Node.js LTS and npm
-- Xcode for iOS and Android Studio/SDK for Android
-- PostgreSQL database and Resend account
-- Optional Google Cloud and Apple Developer accounts
+Start the API and Expo in separate terminals:
 
-Google, Apple, and biometrics require a native development build; Expo Go is not sufficient.
+~~~sh
+npm run backend:dev
+npm run start:go
+~~~
 
-## Quick start
+npm start retains development-client startup. npm run web, npm run android, and npm run ios delegate to mobile. Restart any old Metro instance after the move.
 
-### 1. Install and choose the app identity
+Follow [backend setup](backend/README.md) to prepare a NEW PostgreSQL database, apply Prisma migrations, and configure email/OAuth. Existing Drizzle databases require the documented schema review and baseline before Prisma migrations.
 
-```sh
-npm install
-cp .env.example .env
-```
+## Routes and preserved behavior
 
-Edit `app-identity.json` before creating OAuth clients or native builds:
+Registration is /register. Existing /sign-up links redirect there. The protected home is /(app), with /dashboard retained as a compatibility redirect. Public browsing, required username onboarding, account settings/deletion, email verification/recovery, and optional local app lock are preserved.
 
-```json
-{
-  "name": "Expo Auth Starter",
-  "slug": "expo-auth-starter",
-  "scheme": "expoauthstarter",
-  "iosBundleIdentifier": "com.example.expoauthstarter",
-  "androidPackage": "com.example.expoauthstarter"
-}
-```
+Phone verification is not implemented in the existing client or API, so there is no inactive verify-phone route. SMS verification needs a complete provider-backed feature. The UI currently uses system fonts; assets/fonts documents where licensed custom fonts belong.
 
-This single file supplies the product name, Expo slug, URL scheme, iOS bundle ID, and Android package throughout the project.
+Expo Go remains available for supported flows. Native identity/device capabilities retain their existing development-build requirements.
 
-### 2. Configure the required environment
+## Checks
 
-```dotenv
-DATABASE_URL=postgresql://user:password@host/database?sslmode=require
-BETTER_AUTH_SECRET=replace-with-at-least-32-random-characters
-BETTER_AUTH_URL=http://localhost:8081
-EXPO_PUBLIC_API_URL=http://localhost:8081
-EXPO_PUBLIC_APP_ENV=development
-EMAIL_FROM=Expo Auth Starter <onboarding@resend.dev>
-RESEND_API_KEY=re_replace_with_your_server_only_key
-```
-
-Generate the auth secret with `npx auth secret`. Only intentionally public build values use the `EXPO_PUBLIC_` prefix; database, auth, email, and OAuth secrets stay server-only.
-
-### 3. Prepare the database and email
-
-Create a Supabase project or another PostgreSQL database, set `DATABASE_URL` to the PostgreSQL connection string from the Supabase **Connect** dialog (include `?sslmode=require`), and apply the committed schema:
-
-```sh
-npm run db:migrate
-```
-
-Create a Resend API key and sender. The shared `onboarding@resend.dev` sender can normally email only the address associated with your Resend account; verify your own domain before testing other recipients or deploying.
-
-### 4. Build and run
-
-```sh
-npm start
-npm run ios
-npm run android
-```
-
-Email/password works before Google or Apple is configured. Rebuild after changing native plugins, identifiers, entitlements, or OAuth configuration; restarting Metro is not enough.
-
-### 5. Verify the setup
-
-- Open `http://localhost:8081/api/health` and confirm the database is reachable.
-- Register with a password of at least 15 characters.
-- Enter the six-digit email code, choose a unique username, and optionally enable App Lock.
-- Confirm public data works without a session and private data requires one.
-
-## Environment reference
-
-| Variable | When | Visibility |
-|---|---|---|
-| `DATABASE_URL` | Required | Server |
-| `BETTER_AUTH_SECRET` | Required | Server |
-| `BETTER_AUTH_URL` | Required | Server |
-| `EXPO_PUBLIC_API_URL` | Required | Client |
-| `EXPO_PUBLIC_APP_ENV` | Required | Client |
-| `EMAIL_FROM`, `RESEND_API_KEY` | Required | Server |
-| `AUTH_TRUSTED_ORIGINS` | Additional browser origins | Server |
-| `EXPO_PUBLIC_GOOGLE_*_CLIENT_ID` | Google | Client |
-| `GOOGLE_CLIENT_SECRET` | Google | Server |
-| `APPLE_TEAM_ID` | Optional signing selection | Build environment |
-
-See `.env.example` for descriptions and placeholders.
-
-## Native providers
-
-### Google
-
-For Expo Go, use the browser-based OAuth flow. Create a **Web application** OAuth client in Google Cloud, put its client ID in `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, and keep its client secret in `GOOGLE_CLIENT_SECRET`. Add this exact redirect URI to that Web client:
-
-```text
-http://localhost:8081/api/auth/callback/google
-```
-
-The URI must match `BETTER_AUTH_URL` exactly, followed by `/api/auth/callback/google`. For example, if `BETTER_AUTH_URL` uses a LAN address while testing on a phone, add `http://192.168.1.10:8081/api/auth/callback/google` instead and use the same LAN address in `BETTER_AUTH_URL`. Do not add the Expo `exp://` URL as Google's redirect URI; Better Auth's Expo proxy handles the final return to Expo Go.
-
-Native development builds can additionally use separate iOS and Android OAuth clients. The iOS client uses the bundle ID; Android uses the package and signing SHA-1.
-
-```dotenv
-EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=
-EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=
-EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-```
-
-All four values must be present. The client IDs are public; the client secret is not.
-
-### Apple
-
-Register the exact iOS bundle ID, enable **Sign in with Apple** for that App ID, and use normal Xcode/EAS signing. The native ID-token flow does not require a Service ID, web callback, `.p8` key, or Apple client secret.
-
-Detailed setup, troubleshooting, and Apple deletion requirements are in [Provider setup](docs/providers.md).
-
-## How it fits together
-
-```text
-app starts
-  -> restore server session and local app-lock preference
-  -> signed out: auth routes
-  -> signed in but incomplete: onboarding
-  -> signed in and complete: dashboard
-  -> session request failed: retry screen
-```
-
-```text
-feature -> client API -> app/api route -> server handler -> auth/database/email
-```
-
-`src/app` owns routes, `src/features` owns product behavior, `src/components` owns reusable UI, `src/lib` owns client integrations, and `src/server` owns secrets and privileged work. Route guards control navigation; every private API still validates the server session.
-
-See [Architecture](docs/architecture.md) for route groups, module placement, adding protected features, and removing optional capabilities.
-
-## Customization map
-
-| Goal | Start here |
-|---|---|
-| Change name, scheme, or native IDs | `app-identity.json` |
-| Change password limits | `src/constants/auth-policy.ts` |
-| Change username/onboarding rules | `src/features/onboarding/onboarding-contract.ts`, `src/server/onboarding` |
-| Change colors and UI primitives | `src/theme`, `src/components/ui` |
-| Add a protected screen/API | [Architecture](docs/architecture.md#adding-a-protected-feature) |
-| Add or change user fields | `src/constants/auth-user-fields.ts`, auth schema, migration |
-| Replace Supabase with another PostgreSQL host | `src/server/db/index.ts` |
-| Replace Drizzle with Prisma/another ORM | [Production](docs/production.md#database-and-orm-portability) |
-| Replace Resend | `src/server/email/email-delivery.ts`, `src/server/env.ts` |
-| Remove onboarding or biometrics | [Architecture](docs/architecture.md#optional-capabilities) |
-| Remove Google or Apple | [Provider setup](docs/providers.md) |
-| Replace Better Auth | `src/lib/auth`, `src/server/auth`, auth API route/provider |
-
-Provider replacement should preserve the small application contract rather than changing every screen.
-
-## API examples
-
-| Endpoint | Access |
-|---|---|
-| `GET /api/health` | Public readiness |
-| `/api/auth/*` | Better Auth operations |
-| `GET /api/demo/public` | Public example |
-| `GET /api/demo/protected` | Authenticated and onboarded |
-| `PATCH /api/onboarding` | Authenticated unique-username completion |
-
-The example buttons make these requests explicitly. The public demo works without a session and may be cached. The protected demo validates the Better Auth session and completed onboarding on the server, returns `401` or `403` when access is unavailable, and uses private `no-store` caching.
-
-Remove the demo endpoints after real product resources replace them; keep the health endpoint.
-
-## Commands
-
-| Command | Purpose |
-|---|---|
-| `npm start` | Start Metro |
-| `npm run ios` / `npm run android` | Build native applications |
-| `npm run check` | TypeScript, ESLint, and isolated tests |
-| `npm run auth:schema` | Regenerate Better Auth's Drizzle schema |
-| `npm run db:generate` / `npm run db:migrate` | Generate/apply migrations |
-| `npm run db:studio` | Open Drizzle Studio |
-| `npm run audit:client` | Check exported bundles for server secrets |
-
-## Testing
-
-```sh
+~~~sh
 npm run check
-```
+npm run audit:client
+~~~
 
-## Before production
+The client audit inspects the static mobile export against configured backend secret values without importing backend code into Expo.
 
-- Use HTTPS origins and unique secrets from a secret manager.
-- Verify the Resend domain and apply reviewed migrations.
-- Configure trusted proxy/IP behavior for database-backed rate limiting.
-- Build with production environment values and test authentication on physical devices.
-- Run the automated checks and client-secret audit command.
-- Add Google Play's public account-deletion URL.
-- Implement Apple authorization revocation before shipping Apple-linked deletion.
+For database-backed tests, use a dedicated disposable TEST_DATABASE_URL as described in [backend testing](backend/README.md):
 
-See [Production](docs/production.md) for session, deletion, observability, portability, and release details.
+~~~sh
+npm run test:e2e
+npm --prefix backend run test:standalone
+~~~
 
-## Documentation
+The preserved server regression suite is optional and independent:
 
-- [Architecture](docs/architecture.md)
-- [Provider setup](docs/providers.md)
-- [Production](docs/production.md)
+~~~sh
+npm --prefix backend/legacy-expo ci
+npm run test:legacy
+~~~
+
+Edit shared/app-identity.json for product/native identity and shared/auth-policy.json for password limits and sensitive-action freshness. Neither file contains secrets.
+
+See [architecture](docs/architecture.md), [provider setup](docs/providers.md), [production](docs/production.md), and [mobile setup](mobile/README.md).
+
+Verification results for this restructure are recorded in [verification](docs/verification.md).

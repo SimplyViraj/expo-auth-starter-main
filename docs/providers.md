@@ -1,3 +1,7 @@
+# Provider configuration after the split
+
+Public client IDs and build values belong in mobile/.env; email/auth/OAuth secrets belong in backend/.env. Run Expo/native commands from mobile/.
+
 # Provider setup
 
 Email/password uses the required database and email service. Google, Apple, and biometric app lock are optional native capabilities.
@@ -13,11 +17,11 @@ RESEND_API_KEY=re_replace_with_your_server_only_key
 
 The shared Resend sender can normally deliver only to the account owner's address. For real users, verify a domain, create a server API key, update `EMAIL_FROM`, and restart the server.
 
-Delivery is isolated in `src/server/email/email-delivery.ts`. To change providers, preserve `sendAuthOtpEmail`, replace the request, and update provider-specific validation in `src/server/env.ts`. The adapter must send text/HTML, time out, throw on rejection, and never log recipients or codes. Better Auth continues to own OTP generation, hashing, expiry, attempts, and verification.
+Delivery is isolated in `backend/src/modules/identity/providers/email.provider.ts`. To change providers, preserve `EmailProvider.sendOtp`, replace the request, and update provider-specific validation in `backend/src/config/env.validation.ts`. The adapter must send text/HTML, time out, throw on rejection, and never log recipients or codes. Better Auth continues to own OTP generation, hashing, expiry, attempts, and verification.
 
 ## Google Sign-In
 
-Finalize `iosBundleIdentifier` and `androidPackage` in `app-identity.json` first.
+Finalize `iosBundleIdentifier` and `androidPackage` in `shared/app-identity.json` first.
 
 In one Google Cloud project:
 

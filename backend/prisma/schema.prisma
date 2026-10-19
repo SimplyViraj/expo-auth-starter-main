@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model User {
+  id                    String    @id
+  name                  String
+  email                 String    @unique
+  emailVerified         Boolean   @default(false) @map("email_verified")
+  image                 String?
+  username              String?   @unique
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamp(3)
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(3)
+  onboardingCompleted   Boolean   @default(false) @map("onboarding_completed")
+  onboardingCompletedAt DateTime? @map("onboarding_completed_at") @db.Timestamp(3)
+  sessions              Session[]
+  accounts              Account[]
+  @@map("user")
+}
+model Session {
+  id        String   @id
+  expiresAt DateTime @map("expires_at") @db.Timestamp(3)
+  token     String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp(3)
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId], map: "session_userId_idx")
+  @@map("session")
+}
+model Account {
+  id                    String    @id
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id")
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamp(3)
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamp(3)
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamp(3)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamp(3)
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId], map: "account_userId_idx")
+  @@map("account")
+}
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at") @db.Timestamp(3)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp(3)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(3)
+  @@index([identifier], map: "verification_identifier_idx")
+  @@map("verification")
+}
+model RateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt @map("last_request")
+  @@map("rate_limit")
+}

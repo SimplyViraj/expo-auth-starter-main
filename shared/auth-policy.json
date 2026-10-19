@@ -1,0 +1,5 @@
+{
+  "minimumPasswordLength": 15,
+  "maximumPasswordLength": 128,
+  "sensitiveActionFreshnessSeconds": 900
+}

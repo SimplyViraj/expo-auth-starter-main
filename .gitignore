@@ -49,3 +49,14 @@ docs/EXPO_AUTH_STARTER_PLAN.md
 # generated native folders
 /ios
 /android
+
+# Backend build, local package cache, and test coverage
+backend/.npm-cache/
+backend/coverage/
+
+# Relocated mobile native projects and test/cache output
+/mobile/ios
+/mobile/android
+mobile/coverage/
+mobile/.npm-cache/
+backend/legacy-expo/coverage/
