@@ -2,7 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-import { json } from 'express';
+import { applicationJson } from './common/middleware/application-json.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { createValidationPipe } from './common/pipes/validation.pipe.js';
 import { CacheControlInterceptor } from './common/interceptors/cache-control.interceptor.js';
@@ -19,12 +19,7 @@ export async function configureApp(app: INestApplication) {
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Cookie', 'expo-origin', 'x-skip-oauth-proxy', 'Authorization'],
   });
-  // Better Auth must receive its raw request stream.
-  const parseJson = json({ limit: '32kb' });
-  app.use((req: import('express').Request, res: import('express').Response, next: import('express').NextFunction) => {
-    if (req.path === '/api/auth' || req.path.startsWith('/api/auth/')) return next();
-    return parseJson(req, res, next);
-  });
+  app.use(applicationJson());
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalPipes(createValidationPipe());
   app.useGlobalInterceptors(new CacheControlInterceptor());

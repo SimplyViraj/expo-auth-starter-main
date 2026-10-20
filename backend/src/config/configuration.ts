@@ -14,3 +14,10 @@ export const authPolicy = z.object({
   sensitiveActionFreshnessSeconds: z.number().int().positive(),
 }).refine((value) => value.maximumPasswordLength >= value.minimumPasswordLength)
   .parse(JSON.parse(readFileSync(new URL('../../../shared/auth-policy.json', import.meta.url), 'utf8')));
+
+export const profilePhotoPolicy = z.object({
+  thumbnailSize: z.number().int().positive(),
+  maxSourceBytes: z.number().int().positive(),
+  maxUploadBytes: z.number().int().positive(),
+  maxStoredBytes: z.number().int().positive(),
+}).parse(JSON.parse(readFileSync(new URL('../../../shared/profile-photo-policy.json', import.meta.url), 'utf8')));

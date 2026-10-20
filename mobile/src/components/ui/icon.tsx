@@ -28,6 +28,7 @@ const iconMap = {
   lock: { ios: 'lock.fill', android: 'lock', web: 'lock' },
   mail: { ios: 'envelope.fill', android: 'mail', web: 'mail' },
   person: { ios: 'person.crop.circle', android: 'account_circle', web: 'account_circle' },
+  photo: { ios: 'photo', android: 'photo_library', web: 'photo_library' },
   signOut: { ios: 'rectangle.portrait.and.arrow.right', android: 'logout', web: 'logout' },
   userPlus: { ios: 'person.badge.plus', android: 'person_add', web: 'person_add' },
   refresh: { ios: 'arrow.clockwise', android: 'refresh', web: 'refresh' },

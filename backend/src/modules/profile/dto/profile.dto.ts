@@ -1,6 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsString, Length, Matches, ValidateIf } from 'class-validator';
+import { IsBase64, IsString, Length, Matches, ValidateIf } from 'class-validator';
+import { profilePhotoPolicy } from '../../../config/configuration.js';
+
+export class UploadProfilePhotoDto {
+  @ApiProperty({ description: 'Base64-encoded JPEG, PNG, or WebP image. Maximum decoded size: 256 KiB.' })
+  @IsString()
+  @IsBase64()
+  @Length(4, 4 * Math.ceil(profilePhotoPolicy.maxUploadBytes / 3))
+  base64!: string;
+}
 
 export class UpdateProfileDto {
   @ApiPropertyOptional({ minLength: 2, maxLength: 80, example: 'Anaya Sharma' })
@@ -23,6 +32,7 @@ export class UpdateProfileDto {
 export class MemberProfileDto {
   @ApiProperty() id!: string;
   @ApiProperty() name!: string;
+  @ApiProperty({ type: String, nullable: true, description: 'Social profile photo URL or uploaded JPEG thumbnail data URI' }) image!: string | null;
   @ApiProperty({ type: String, nullable: true }) username!: string | null;
   @ApiProperty() email!: string;
   @ApiProperty() emailVerified!: boolean;

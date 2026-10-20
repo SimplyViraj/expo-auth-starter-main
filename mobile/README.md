@@ -39,6 +39,8 @@ Member tabs are Home (`/(app)`), Appointments (`/appointments`), Wellness (`/wel
 
 Profile loads the current account from `GET /api/profile` and saves name/username through `PATCH /api/profile`. Name is trimmed and must contain 2–80 characters; usernames follow the onboarding rules and remain unique. Email and verified mobile number are read-only. Unknown fields, identity changes, verification flags, and empty updates are rejected by the server. Member profile queries are scoped by user ID and cleared on logout.
 
+Profile displays the saved social photo and supports choosing, previewing, uploading, and removing a replacement through `/api/profile/photo`. Apple sign-in does not provide a photo; missing/broken photos use initials. Photos are processed into small JPEG thumbnails and stored with the account. Rebuild existing development clients after installing the new `expo-image-picker` and `expo-image-manipulator` dependencies. See [member shell documentation](../docs/member-shell.md#profile-photos) for upload validation and storage details.
+
 Appointments and Wellness currently show coming-soon placeholders. See [member shell verification](../docs/member-shell.md) for behavior and checks.
 
 Phone verification lives at app/(app)/(onboarding)/verify-phone.tsx. SMS login lives at app/(auth)/phone-sign-in.tsx. Twilio credentials stay in backend/.env. See [phone verification](../docs/phone-verification.md) for setup, migration and testing.

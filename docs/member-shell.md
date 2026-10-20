@@ -21,6 +21,18 @@ Profile shows a loading indicator, a retry action if loading fails, and a warnin
 
 Profile queries include the member ID in their cache key. Profile reads accept an abort signal. Logout cancels queries and clears the query cache; the auth guards remove member history. Logout uses an inline confirmation on native and web, blocks repeated requests, and leaves the session active with an error toast when the sign-out request fails. The logout action remains available even if profile loading fails.
 
+## Profile photos
+
+The Profile tab displays the account's existing `image`, including Google's photo URL saved during social registration. Sign in with Apple supplies no profile picture, so members without a photo see their initials. Image loading failures also fall back to initials.
+
+Use **Edit photo** to choose an image from the device library, preview it, save it, or remove the existing photo. Native pickers provide square cropping; web creates a centered square thumbnail. Cancel leaves the saved photo unchanged. Source files are limited to 20 MiB and are reduced to 256 × 256 JPEGs before uploading. Failed uploads preserve the preview for retry.
+
+`PATCH /api/profile/photo` accepts `{ "base64": "..." }`; `DELETE /api/profile/photo` removes the current photo. Both require the member session and onboarding guards and always use the session account ID. Uploads accept up to 256 KiB of decoded JPEG, PNG, or WebP data. The backend checks actual image contents, rejects animation and invalid formats, bounds input pixels, re-encodes the thumbnail, and strips metadata. The photo endpoint has a 384 KiB JSON request limit; other application endpoints keep their 32 KiB limit. Direct image updates through Better Auth's registration/update endpoints are rejected so photo replacements use the validated upload flow.
+
+The resulting thumbnail is capped at 64 KiB and stored as a JPEG data URI in the existing `User.image` field. This keeps account photos private and persistent without requiring public file hosting, filesystem storage, cloud credentials, or a database migration. It also adds the small thumbnail to session/profile responses. Existing Google photo URLs remain external until replaced; removing a photo shows initials. Later social logins use Better Auth's default behavior of preserving saved user details.
+
+`expo-image-picker` and `expo-image-manipulator` are new native dependencies. Rebuild an existing development client (`npm run android` or `npm run ios` on the appropriate platform) before testing photo selection. The image picker config enables the photo-library usage message and does not request camera or microphone access.
+
 ## Verification
 
 Run `npm run typecheck`, `npm run lint`, and `npm test` from the repository root. Backend profile HTTP tests exercise real guards, validation, controller, and service with mocked persistence. They cover anonymous/incomplete accounts, session ownership, field validation, origins, partial updates, conflicts, and missing accounts. Mobile tests cover profile validation and normalization.
@@ -35,3 +47,4 @@ Manual device checks:
 4. Disconnect before opening Profile and before saving; confirm retry actions and preserved form input.
 5. Sign out, then try Back and a member deep link; confirm member screens stay protected. Sign in as a different member and confirm their own details appear.
 6. Repeat with app lock enabled and check the keyboard, bottom safe area, and light/dark appearance on native devices.
+7. Check a Google account's photo and an account without a photo. Upload a new image, cancel a selection, retry a failed upload, remove a photo, and verify it persists across sign-out/sign-in. Test on web and rebuilt native clients.

@@ -1,0 +1,6 @@
+{
+  "thumbnailSize": 256,
+  "maxSourceBytes": 20971520,
+  "maxUploadBytes": 262144,
+  "maxStoredBytes": 65536
+}

@@ -15,7 +15,7 @@ export default function AppLayout() {
       return;
     }
 
-    router.replace('/(app)');
+    router.replace('/(app)/(tabs)');
   }
 
   const backButton = () => (

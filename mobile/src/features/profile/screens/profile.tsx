@@ -1,6 +1,5 @@
 import { Link, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { View } from 'react-native';
 
 import { Alert } from '@/components/feedback/alert';
 import { LoadingIndicator } from '@/components/feedback/loading-indicator';
@@ -10,16 +9,20 @@ import { Card } from '@/components/ui/card';
 import { ListRow } from '@/components/ui/list-row';
 import { Screen } from '@/components/ui/screen';
 import { ProfileForm } from '@/features/profile/components/profile-form';
+import { ProfileAvatar } from '@/features/profile/components/profile-avatar';
+import { ProfilePhotoEditor } from '@/features/profile/components/profile-photo-editor';
 import { useProfile } from '@/features/profile/hooks/use-profile';
 import { useAuth } from '@/providers/auth-provider';
 import { useAppTheme } from '@/theme/theme-provider';
 
 export default function ProfileScreen() {
   const { isSigningOut, signOut, user } = useAuth();
-  const { colors, radius, spacing } = useAppTheme();
+  const { spacing } = useAppTheme();
   const profileQuery = useProfile();
   const { refetch } = profileQuery;
-  const [isEditing, setIsEditing] = useState(false);
+  const [editor, setEditor] = useState<'details' | 'photo' | null>(null);
+  const isEditing = editor === 'details';
+  const isEditingPhoto = editor === 'photo';
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const profile = profileQuery.data?.user;
 
@@ -45,25 +48,23 @@ export default function ProfileScreen() {
       {profile ? (
         <>
           <Card style={{ alignItems: 'center', padding: spacing.xl }}>
-            <View
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={{ width: 72, height: 72, borderRadius: radius.pill, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' }}>
-              <AppText variant="hero" tone="primary">{profile.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}</AppText>
-            </View>
+            <ProfileAvatar image={profile.image} name={profile.name} />
             <AppText variant="title" style={{ textAlign: 'center' }}>{profile.name}</AppText>
             {profile.username ? <AppText tone="muted">@{profile.username}</AppText> : null}
             <AppText variant="caption" tone="primary">AAyuva member</AppText>
+            {!isEditingPhoto ? <Button label="Edit photo" icon="photo" variant="ghost" disabled={isEditing || profileQuery.isError || isSigningOut} onPress={() => setEditor('photo')} /> : null}
           </Card>
 
+          {isEditingPhoto ? <ProfilePhotoEditor key={user?.id} profile={profile} onClose={() => setEditor(null)} /> : null}
+
           {isEditing ? (
-            <ProfileForm key={user?.id} profile={profile} onClose={() => setIsEditing(false)} />
+            <ProfileForm key={user?.id} profile={profile} onClose={() => setEditor(null)} />
           ) : (
             <Card>
               <AppText variant="subtitle">Personal details</AppText>
               <ListRow title="Full name" body={profile.name} icon="person" />
               <ListRow title="Username" body={profile.username ? `@${profile.username}` : 'Not set'} icon="edit" />
-              <Button label="Edit profile" icon="edit" variant="outline" disabled={profileQuery.isError || isSigningOut} onPress={() => setIsEditing(true)} />
+              <Button label="Edit profile" icon="edit" variant="outline" disabled={isEditingPhoto || profileQuery.isError || isSigningOut} onPress={() => setEditor('details')} />
             </Card>
           )}
 
@@ -78,7 +79,7 @@ export default function ProfileScreen() {
         </>
       ) : null}
 
-      {!isEditing ? (
+      {!editor ? (
         <>
           <Link href="/settings" asChild>
             <Button label="Settings" icon="settings" variant="outline" disabled={isSigningOut} />

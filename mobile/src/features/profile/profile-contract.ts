@@ -15,6 +15,7 @@ export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type MemberProfile = {
   id: string;
   name: string;
+  image: string | null;
   username: string | null;
   email: string;
   emailVerified: boolean;

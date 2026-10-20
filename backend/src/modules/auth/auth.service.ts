@@ -43,6 +43,9 @@ function createAuth(prisma: PrismaService, config: ConfigService<Environment, tr
     },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        if ((ctx.path === '/update-user' || ctx.path === '/sign-up/email') && ctx.body?.image !== undefined) {
+          throw new APIError('BAD_REQUEST', { code: 'USE_PHOTO_UPLOAD', message: 'Use the profile photo upload to change your photo.' });
+        }
         if (ctx.path !== '/delete-user') return;
         const session = await getSessionFromCtx(ctx);
         if (!session) return;
