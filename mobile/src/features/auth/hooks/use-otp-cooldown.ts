@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 
 const defaultCooldownSeconds = 60;
 
-export function useOtpCooldown(durationSeconds = defaultCooldownSeconds) {
-  const [secondsRemaining, setSecondsRemaining] = useState(durationSeconds);
+export function useOtpCooldown(durationSeconds = defaultCooldownSeconds, initialSeconds = durationSeconds) {
+  const [secondsRemaining, setSecondsRemaining] = useState(initialSeconds);
 
   useEffect(() => {
     if (secondsRemaining <= 0) return;

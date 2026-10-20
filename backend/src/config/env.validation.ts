@@ -18,8 +18,14 @@ const schema = z.object({
   EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: googleId,
   EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: googleId,
   EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: googleId,
+  TWILIO_ACCOUNT_SID: z.string().regex(/^AC[0-9a-f]{32}$/i).optional(),
+  TWILIO_AUTH_TOKEN: z.string().min(32).optional(),
+  TWILIO_VERIFY_SERVICE_SID: z.string().regex(/^VA[0-9a-f]{32}$/i).optional(),
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
 }).superRefine((value, ctx) => {
+  const twilio = [value.TWILIO_ACCOUNT_SID, value.TWILIO_AUTH_TOKEN, value.TWILIO_VERIFY_SERVICE_SID];
+  if (twilio.some(Boolean) && !twilio.every(Boolean)) ctx.addIssue({ code: 'custom', path: ['TWILIO_ACCOUNT_SID'], message: 'Twilio requires account SID, auth token and Verify service SID together' });
+  if (value.NODE_ENV === 'production' && !twilio.every(Boolean)) ctx.addIssue({ code: 'custom', path: ['TWILIO_ACCOUNT_SID'], message: 'Twilio Verify is required for phone onboarding in production' });
   const google = [value.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID, value.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID, value.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID, value.GOOGLE_CLIENT_SECRET];
   if (google.some(Boolean) && (!google[0] || !google[3])) ctx.addIssue({ code: 'custom', path: ['GOOGLE_CLIENT_SECRET'], message: 'Google requires both web client ID and secret' });
   if (value.NODE_ENV === 'production') {

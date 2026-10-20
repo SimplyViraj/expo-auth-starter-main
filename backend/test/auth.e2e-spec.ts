@@ -1,3 +1,5 @@
+import { PhoneError } from '../src/modules/phone/phone-error.js';
+import { TwilioVerifyProvider } from '../src/modules/identity/providers/twilio-verify.provider.js';
 import 'reflect-metadata';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { Test } from '@nestjs/testing';
@@ -16,6 +18,17 @@ const deliveries: OtpEmail[] = [];
 let app: INestApplication;
 let prisma: PrismaService;
 let counter = 0;
+let phoneCounter = Math.floor(Math.random() * 8000000);
+const sms = new Map<string, { phoneNumber: string; approved: boolean }>();
+const sentPhones: string[] = [];
+let failSms = false;
+let allowRepeatedApproval = false;
+function phoneNumber() { return '+1555' + (++phoneCounter).toString().padStart(7, '0'); }
+async function linkPhone(agent: Agent, number = phoneNumber()) {
+  const challenge = await agent.post('/api/auth/phone/send-code').send({ phoneNumber: number, purpose: 'verify' }).expect(200);
+  await agent.post('/api/auth/phone/verify').send({ challengeId: challenge.body.challengeId, code: '123456' }).expect(200);
+  return number;
+}
 type Agent = ReturnType<typeof request.agent>;
 
 function address() { return runId + '-' + (++counter) + '@example.com'; }
@@ -28,16 +41,29 @@ async function register(agent: Agent, email = address()) {
   await agent.post('/api/auth/sign-up/email').send({ name: 'Test User', email, password }).expect(200);
   return email;
 }
-async function verified() {
+async function verified(withPhone = true) {
   const agent = request.agent(app.getHttpServer());
   const email = await register(agent);
   await agent.post('/api/auth/email-otp/verify-email').send({ email, otp: code(email, 'email-verification') }).expect(200);
+  if (withPhone) await linkPhone(agent);
   return { agent, email };
 }
 
 beforeAll(async () => {
   const module = await Test.createTestingModule({ imports: [AppModule] })
     .overrideProvider(EmailProvider).useValue({ sendOtp: async (message: OtpEmail) => { deliveries.push(message); } })
+    .overrideProvider(TwilioVerifyProvider).useValue({
+      send: async (phoneNumber: string) => {
+        if (failSms) throw new PhoneError(503, 'PHONE_DELIVERY_FAILED', 'The verification service is unavailable. Please try again later.');
+        const sid = 'VE' + randomUUID().replace(/-/g, '');
+        sms.set(sid, { phoneNumber, approved: false }); sentPhones.push(phoneNumber); return sid;
+      },
+      check: async (sid: string, code: string) => {
+        const entry = sms.get(sid);
+        if (!entry || (!allowRepeatedApproval && entry.approved) || code !== '123456') return false;
+        entry.approved = true; return true;
+      },
+    })
     .compile();
   app = module.createNestApplication({ bodyParser: false, logger: false });
   await configureApp(app);
@@ -47,6 +73,9 @@ beforeAll(async () => {
 beforeEach(async () => {
   // This database is explicitly required to be disposable by environment.cjs.
   await prisma.rateLimit.deleteMany();
+  await prisma.phoneChallenge.deleteMany();
+  failSms = false;
+  allowRepeatedApproval = false;
 });
 afterAll(async () => {
   if (prisma) {
@@ -70,6 +99,9 @@ describe('foundation and API contracts', () => {
     expect(response.body.paths['/api/onboarding'].patch.requestBody).toBeDefined();
     expect(response.body.paths['/api/auth/sign-up/email'].post.requestBody).toBeDefined();
     expect(response.body.paths['/api/sessions/{id}'].delete).toBeDefined();
+    expect(response.body.paths['/api/auth/phone/send-code'].post.requestBody).toBeDefined();
+    expect(response.body.paths['/api/auth/phone/verify'].post.requestBody).toBeDefined();
+    expect(response.body.paths['/api/auth/phone/sign-in'].post.requestBody).toBeDefined();
   });
   it('returns safe structured errors for malformed JSON', async () => {
     const { agent } = await verified();
@@ -148,6 +180,7 @@ describe('email authentication lifecycle', () => {
     const email = address();
     await agent.post('/api/auth/sign-up/email').send({
       name: 'Test User', email, password,
+      phoneNumber: '+14155552671', phoneNumberVerified: true, phoneNumberVerifiedAt: new Date().toISOString(),
       username: 'claimed_by_client', onboardingCompleted: true,
       onboardingCompletedAt: new Date().toISOString(),
     }).expect(400);
@@ -242,5 +275,110 @@ describe('owned sessions and deletion', () => {
     expect(await prisma.account.count({ where: { userId: user.id } })).toBe(0);
     expect(await prisma.session.count({ where: { userId: user.id } })).toBe(0);
     await agent.get('/api/sessions').expect(401);
+  });
+});
+
+
+describe('Twilio-backed phone onboarding and login', () => {
+  it('requires verified phone ownership to complete onboarding, including previously completed accounts', async () => {
+    const { agent, email } = await verified(false);
+    const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+    await prisma.user.update({ where: { id: user.id }, data: { onboardingCompleted: true } });
+    await agent.get('/api/demo/protected').expect(403);
+    const denied = await agent.patch('/api/onboarding').send({ username: 'phone_' + counter }).expect(403);
+    expect(denied.body.error.code).toBe('PHONE_VERIFICATION_REQUIRED');
+    const number = await linkPhone(agent);
+    const session = await agent.get('/api/auth/get-session').expect(200);
+    expect(session.body.user).toMatchObject({ phoneNumber: number, phoneNumberVerified: true });
+    expect(session.body.user.phoneNumberVerifiedAt).toBeTruthy();
+    await agent.patch('/api/onboarding').send({ username: 'phone_' + counter }).expect(200);
+    await agent.get('/api/demo/protected').expect(200);
+  });
+  it('validates request contracts and rejects anonymous, stale-session and untrusted linking', async () => {
+    const anonymous = request.agent(app.getHttpServer());
+    await anonymous.post('/api/auth/phone/send-code').send({ phoneNumber: phoneNumber(), purpose: 'verify' }).expect(401);
+    await anonymous.post('/api/auth/phone/send-code').send({ phoneNumber: '12345', purpose: 'sign-in' }).expect(400);
+    await anonymous.post('/api/auth/phone/send-code').set('Origin', 'https://untrusted.example').send({ phoneNumber: phoneNumber(), purpose: 'sign-in' }).expect(403);
+    const { agent, email } = await verified(false);
+    const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+    await prisma.session.updateMany({ where: { userId: user.id }, data: { createdAt: new Date(0) } });
+    await agent.post('/api/auth/phone/send-code').send({ phoneNumber: phoneNumber(), purpose: 'verify' }).expect(403);
+    await anonymous.post('/api/auth/phone/sign-in').send({ challengeId: randomUUID(), code: 'short' }).expect(400);
+  });
+  it('binds verification to its account and purpose and enforces resend cooldown', async () => {
+    const a = await verified(false), b = await verified(false), number = phoneNumber();
+    const challenge = (await a.agent.post('/api/auth/phone/send-code').send({ phoneNumber: number, purpose: 'verify' }).expect(200)).body;
+    await b.agent.post('/api/auth/phone/verify').send({ challengeId: challenge.challengeId, code: '123456' }).expect(400);
+    await a.agent.post('/api/auth/phone/sign-in').send({ challengeId: challenge.challengeId, code: '123456' }).expect(400);
+    await a.agent.post('/api/auth/phone/send-code').send({ phoneNumber: number, purpose: 'verify' }).expect(429);
+    await a.agent.post('/api/auth/phone/verify').send({ challengeId: challenge.challengeId, code: '123456' }).expect(200);
+    await a.agent.post('/api/auth/phone/verify').send({ challengeId: challenge.challengeId, code: '123456' }).expect(400);
+  });
+  it('rejects incorrect and expired codes and caps attempts before calling Twilio again', async () => {
+    const { agent } = await verified(false);
+    const challenge = (await agent.post('/api/auth/phone/send-code').send({ phoneNumber: phoneNumber(), purpose: 'verify' }).expect(200)).body;
+    for (let i = 0; i < 5; i++) await agent.post('/api/auth/phone/verify').send({ challengeId: challenge.challengeId, code: '999999' }).expect(400);
+    await agent.post('/api/auth/phone/verify').send({ challengeId: challenge.challengeId, code: '123456' }).expect(400);
+    const expired = (await agent.post('/api/auth/phone/send-code').send({ phoneNumber: phoneNumber(), purpose: 'verify' }).expect(200)).body;
+    await prisma.phoneChallenge.update({ where: { id: expired.challengeId }, data: { expiresAt: new Date(0) } });
+    await agent.post('/api/auth/phone/verify').send({ challengeId: expired.challengeId, code: '123456' }).expect(400);
+  });
+  it('enforces unique verified numbers across different accounts', async () => {
+    const a = await verified(), b = await verified(false);
+    const user = await prisma.user.findUniqueOrThrow({ where: { email: a.email } });
+    await prisma.phoneChallenge.updateMany({ where: { phoneNumber: user.phoneNumber! }, data: { createdAt: new Date(0) } });
+    const challenge = (await b.agent.post('/api/auth/phone/send-code').send({ phoneNumber: user.phoneNumber, purpose: 'verify' }).expect(200)).body;
+    await b.agent.post('/api/auth/phone/verify').send({ challengeId: challenge.challengeId, code: '123456' }).expect(409);
+    expect((await prisma.user.findUniqueOrThrow({ where: { email: b.email } })).phoneNumberVerified).toBe(false);
+  });
+  it('creates an existing-account session after SMS login and prevents concurrent replay', async () => {
+    const { agent, email } = await verified();
+    const user = await prisma.user.findUniqueOrThrow({ where: { email } });
+    await agent.patch('/api/onboarding').send({ username: 'sms_' + counter }).expect(200);
+    await agent.post('/api/auth/sign-out').send({}).expect(200);
+    await prisma.phoneChallenge.updateMany({ where: { phoneNumber: user.phoneNumber! }, data: { createdAt: new Date(0) } });
+    const challenge = (await agent.post('/api/auth/phone/send-code').send({ phoneNumber: user.phoneNumber, purpose: 'sign-in' }).expect(200)).body;
+    allowRepeatedApproval = true; // Prove the database consume gate independently of Twilio's one-use behavior.
+    const a = request.agent(app.getHttpServer()), b = request.agent(app.getHttpServer());
+    const results = await Promise.all([a.post('/api/auth/phone/sign-in').send({ challengeId: challenge.challengeId, code: '123456' }), b.post('/api/auth/phone/sign-in').send({ challengeId: challenge.challengeId, code: '123456' })]);
+    expect(results.map(r => r.status).sort()).toEqual([200, 400]);
+    const winner = results[0].status === 200 ? a : b;
+    await winner.get('/api/demo/protected').expect(200);
+    expect((await winner.get('/api/auth/get-session')).body.user.id).toBe(user.id);
+    const sessions = await prisma.session.count({ where: { userId: user.id } });
+    expect(sessions).toBe(1);
+  });
+  it('does not send SMS, create accounts or disclose membership for unknown login numbers', async () => {
+    const previous = sentPhones.length;
+    const agent = request.agent(app.getHttpServer()), number = phoneNumber();
+    const challenge = (await agent.post('/api/auth/phone/send-code').send({ phoneNumber: number, purpose: 'sign-in' }).expect(200)).body;
+    expect(challenge).toMatchObject({ challengeId: expect.any(String), expiresIn: 600, resendAfter: 60 });
+    expect(sentPhones.length).toBe(previous);
+    await agent.post('/api/auth/phone/sign-in').send({ challengeId: challenge.challengeId, code: '123456' }).expect(400);
+    expect(await prisma.user.count({ where: { phoneNumber: number } })).toBe(0);
+    await agent.get('/api/auth/get-session').expect(200).expect('null');
+  });
+});
+
+
+describe('phone failure and abuse boundaries', () => {
+  it('does not let a client mark a number verified through profile updates', async () => {
+    const { agent, email } = await verified(false);
+    await agent.post('/api/auth/update-user').send({ phoneNumber: phoneNumber(), phoneNumberVerified: true, phoneNumberVerifiedAt: new Date().toISOString() }).expect(400);
+    expect((await prisma.user.findUniqueOrThrow({ where: { email } })).phoneNumberVerified).toBe(false);
+  });
+  it('returns a safe provider failure and keeps the reservation to prevent rapid retries', async () => {
+    const { agent } = await verified(false), number = phoneNumber();
+    failSms = true;
+    const response = await agent.post('/api/auth/phone/send-code').send({ phoneNumber: number, purpose: 'verify' }).expect(503);
+    expect(response.body.code).toBe('PHONE_DELIVERY_FAILED');
+    await agent.post('/api/auth/phone/send-code').send({ phoneNumber: number, purpose: 'verify' }).expect(429);
+    expect((await agent.get('/api/auth/get-session')).body.user.phoneNumberVerified).toBe(false);
+  });
+  it('limits anonymous sends per socket IP in the persistent rate-limit store', async () => {
+    const agent = request.agent(app.getHttpServer());
+    for (let i = 0; i < 3; i++) await agent.post('/api/auth/phone/send-code').send({ phoneNumber: phoneNumber(), purpose: 'sign-in' }).expect(200);
+    const response = await agent.post('/api/auth/phone/send-code').send({ phoneNumber: phoneNumber(), purpose: 'sign-in' }).expect(429);
+    expect(Number(response.headers['x-retry-after'])).toBeGreaterThan(0);
   });
 });

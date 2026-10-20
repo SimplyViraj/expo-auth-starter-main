@@ -11,7 +11,7 @@ try {
 } catch (error) {
   if (error.code !== 'ENOENT') throw error;
 }
-const names = ['DATABASE_URL', 'BETTER_AUTH_SECRET', 'RESEND_API_KEY', 'GOOGLE_CLIENT_SECRET'];
+const names = ['DATABASE_URL', 'BETTER_AUTH_SECRET', 'RESEND_API_KEY', 'GOOGLE_CLIENT_SECRET', 'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_VERIFY_SERVICE_SID'];
 const secrets = names.map((name) => ({ name, value: server[name] ?? process.env[name] })).filter(({ value }) => value?.length >= 8);
 const extensions = new Set(['.html', '.js', '.json', '.map', '.hbc', '.bundle']);
 async function files(folder) {

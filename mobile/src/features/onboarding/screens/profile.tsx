@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 
@@ -116,6 +117,12 @@ export default function ProfileOnboardingScreen() {
       </Card>
 
       <Card>
+        <AppText variant="subtitle">Mobile number</AppText>
+        <AppText tone="muted">{user?.phoneNumberVerified ? user.phoneNumber : 'Verify a mobile number to finish setup and use SMS login.'}</AppText>
+        {!user?.phoneNumberVerified ? <Button label="Verify mobile number" onPress={() => router.push('/verify-phone')} /> : <AppText tone="primary">Verified</AppText>}
+      </Card>
+
+      <Card>
         <AppText variant="eyebrow">Optional</AppText>
         {/* <AppText variant="subtitle">App lock</AppText> */}
 
@@ -148,7 +155,7 @@ export default function ProfileOnboardingScreen() {
       <Button
         label="Finish setup"
         loading={isSubmitting}
-        disabled={!isValid || isAuthenticating}
+        disabled={!isValid || isAuthenticating || !user?.phoneNumber || !user.phoneNumberVerified}
         onPress={() => void handleSubmit(submit)()}
       />
       <Button

@@ -12,9 +12,10 @@ type OtpCodeInputProps = {
   onBlur?: () => void;
   error?: string;
   label?: string;
+  accessibilityHint?: string;
 };
 
-export function OtpCodeInput({ value, onChange, onBlur, error, label = 'Six-digit code' }: OtpCodeInputProps) {
+export function OtpCodeInput({ value, onChange, onBlur, error, label = 'Six-digit code', accessibilityHint = 'Enter or paste the six-digit code from your email' }: OtpCodeInputProps) {
   const inputRef = useRef<TextInput>(null);
   const [isFocused, setIsFocused] = useState(false);
   const { colors, radius, spacing } = useAppTheme();
@@ -74,7 +75,7 @@ export function OtpCodeInput({ value, onChange, onBlur, error, label = 'Six-digi
           }}
           selection={{ start: value.length, end: value.length }}
           accessibilityLabel={label}
-          accessibilityHint="Enter or paste the six-digit code from your email"
+          accessibilityHint={accessibilityHint}
           autoCapitalize="none"
           autoComplete="one-time-code"
           autoCorrect={false}

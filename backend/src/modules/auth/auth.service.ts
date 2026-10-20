@@ -1,3 +1,5 @@
+import { PhoneService } from '../phone/phone.service.js';
+import { phoneAuth } from './providers/phone-auth.plugin.js';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
@@ -13,7 +15,7 @@ import { appIdentity, authPolicy } from '../../config/configuration.js';
 import { EmailProvider } from '../identity/providers/email.provider.js';
 import { IdentityService } from '../identity/identity.service.js';
 
-function createAuth(prisma: PrismaService, config: ConfigService<Environment, true>, identity: IdentityService, email: EmailProvider) {
+function createAuth(prisma: PrismaService, config: ConfigService<Environment, true>, identity: IdentityService, email: EmailProvider, phone: PhoneService) {
   return betterAuth({
     appName: appIdentity.name,
     baseURL: config.get('BETTER_AUTH_URL', { infer: true }),
@@ -30,6 +32,9 @@ function createAuth(prisma: PrismaService, config: ConfigService<Environment, tr
     emailVerification: { sendOnSignUp: true, sendOnSignIn: true, autoSignInAfterVerification: true },
     user: {
       additionalFields: {
+        phoneNumber: { type: 'string', required: false, input: false },
+        phoneNumberVerified: { type: 'boolean', required: true, defaultValue: false, input: false },
+        phoneNumberVerifiedAt: { type: 'date', required: false, input: false },
         username: { type: 'string', required: false, input: false },
         onboardingCompleted: { type: 'boolean', required: true, defaultValue: false, input: false },
         onboardingCompletedAt: { type: 'date', required: false, input: false },
@@ -59,6 +64,7 @@ function createAuth(prisma: PrismaService, config: ConfigService<Environment, tr
     socialProviders: identity.providers(),
     plugins: [
       expo(),
+      phoneAuth(phone),
       emailOTP({
         overrideDefaultEmailVerification: true,
         otpLength: 6,
@@ -77,8 +83,8 @@ function createAuth(prisma: PrismaService, config: ConfigService<Environment, tr
 export class AuthService {
   readonly engine: ReturnType<typeof createAuth>;
   private readonly nodeHandler: ReturnType<typeof toNodeHandler>;
-  constructor(prisma: PrismaService, config: ConfigService<Environment, true>, identity: IdentityService, email: EmailProvider) {
-    this.engine = createAuth(prisma, config, identity, email);
+  constructor(prisma: PrismaService, config: ConfigService<Environment, true>, identity: IdentityService, email: EmailProvider, phone: PhoneService) {
+    this.engine = createAuth(prisma, config, identity, email, phone);
     this.nodeHandler = toNodeHandler(this.engine);
   }
   handle(request: Request, response: Response) {

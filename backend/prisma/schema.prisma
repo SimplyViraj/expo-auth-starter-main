@@ -16,6 +16,10 @@ model User {
   updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamp(3)
   onboardingCompleted   Boolean   @default(false) @map("onboarding_completed")
   onboardingCompletedAt DateTime? @map("onboarding_completed_at") @db.Timestamp(3)
+  phoneNumber           String?   @unique @map("phone_number")
+  phoneNumberVerified   Boolean   @default(false) @map("phone_number_verified")
+  phoneNumberVerifiedAt DateTime? @map("phone_number_verified_at") @db.Timestamp(3)
+  phoneChallenges       PhoneChallenge[]
   sessions              Session[]
   accounts              Account[]
   @@map("user")
@@ -67,4 +71,20 @@ model RateLimit {
   count       Int
   lastRequest BigInt @map("last_request")
   @@map("rate_limit")
+}
+
+model PhoneChallenge {
+  id              String   @id
+  phoneNumber     String   @unique @map("phone_number")
+  purpose         String
+  userId          String?  @map("user_id")
+  verificationSid String?  @map("verification_sid")
+  consumedAt      DateTime? @map("consumed_at") @db.Timestamp(3)
+  attempts        Int      @default(0)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamp(3)
+  expiresAt       DateTime @map("expires_at") @db.Timestamp(3)
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("phone_challenge")
 }

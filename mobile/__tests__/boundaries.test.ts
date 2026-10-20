@@ -24,6 +24,6 @@ describe('mobile and server boundaries', () => {
     const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
     for (const name of ['@better-auth/drizzle-adapter', 'drizzle-orm', 'postgres', '@nestjs/core', '@prisma/client']) expect(pkg.dependencies).not.toHaveProperty(name);
     const example = readFileSync(resolve(root, '.env.example'), 'utf8');
-    expect(example).not.toMatch(/^(?:DATABASE_URL|BETTER_AUTH_SECRET|RESEND_API_KEY|GOOGLE_CLIENT_SECRET)=/m);
+    expect(example).not.toMatch(/^(?:DATABASE_URL|BETTER_AUTH_SECRET|RESEND_API_KEY|GOOGLE_CLIENT_SECRET|TWILIO_[A-Z_]+)=/m);
   });
 });

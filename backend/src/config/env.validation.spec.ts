@@ -21,9 +21,12 @@ describe('backend environment', () => {
     { DATABASE_URL: 'file:app.db' }, { PORT: '0' }, { BETTER_AUTH_SECRET: 'short' },
     { BETTER_AUTH_URL: 'ftp://localhost' }, { AUTH_TRUSTED_ORIGINS: 'https://*.example.com' }, { AUTH_TRUSTED_ORIGINS: 'https://*.example.com/path' },
     { EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: 'test.apps.googleusercontent.com' },
-    { NODE_ENV: 'production' },
+    { NODE_ENV: 'production' }, { TWILIO_ACCOUNT_SID: 'AC' + 'a'.repeat(32) }, { TWILIO_ACCOUNT_SID: 'invalid' },
   ])('rejects invalid configuration %j', (override) => {
     expect(() => validateEnvironment({ ...valid, ...override })).toThrow('Invalid backend environment');
+  });
+  it('accepts a complete Twilio Verify configuration', () => {
+    expect(validateEnvironment({ ...valid, TWILIO_ACCOUNT_SID: 'AC' + 'a'.repeat(32), TWILIO_AUTH_TOKEN: 'b'.repeat(32), TWILIO_VERIFY_SERVICE_SID: 'VA' + 'c'.repeat(32) }).TWILIO_VERIFY_SERVICE_SID).toBe('VA' + 'c'.repeat(32));
   });
   it('does not print database credentials in errors', () => {
     expect(() => validateEnvironment({ ...valid, DATABASE_URL: 'private-password' })).toThrow('DATABASE_URL');

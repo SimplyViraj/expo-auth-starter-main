@@ -59,4 +59,7 @@ backend/coverage/
 /mobile/android
 mobile/coverage/
 mobile/.npm-cache/
-backend/legacy-expo/coverage/
+
+# Private database backups and baseline review files
+backend/.backups/
+backend/.baseline-review/

@@ -14,11 +14,11 @@
     "typecheck": "npm --prefix mobile run typecheck && npm --prefix backend run typecheck",
     "lint": "npm --prefix mobile run lint",
     "test": "npm --prefix mobile test && npm --prefix backend test",
-    "test:legacy": "npm --prefix backend/legacy-expo test",
     "test:e2e": "npm --prefix backend run test:e2e",
     "check": "npm --prefix mobile run check && npm --prefix backend run check",
     "audit:client": "npm --prefix mobile run audit:client",
     "db:generate": "npm --prefix backend run db:generate",
-    "db:migrate": "npm --prefix backend run db:migrate"
+    "db:migrate": "npm --prefix backend run db:migrate",
+    "test:baseline": "npm --prefix backend run test:baseline"
   }
 }

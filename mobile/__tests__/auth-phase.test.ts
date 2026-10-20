@@ -16,6 +16,11 @@ describe('getAuthPhase', () => {
   });
 
   it('opens the completed application for an onboarded user', () => {
-    expect(getAuthPhase(true, { onboardingCompleted: true })).toBe('ready');
+    expect(getAuthPhase(true, { onboardingCompleted: true, phoneNumber: '+14155552671', phoneNumberVerified: true })).toBe('ready');
   });
+});
+
+it('requires phone onboarding for existing completed accounts without a verified number', () => {
+  expect(getAuthPhase(true, { onboardingCompleted: true })).toBe('needs-onboarding');
+  expect(getAuthPhase(true, { onboardingCompleted: true, phoneNumber: '+14155552671', phoneNumberVerified: false })).toBe('needs-onboarding');
 });

@@ -5,6 +5,6 @@ import { ApiError } from '../../common/errors/api-error.js';
 @Injectable()
 export class AuthorizationService {
   requireOnboarded(session: AuthSession) {
-    if (!session.user.onboardingCompleted) throw new ApiError(403, 'PROFILE_INCOMPLETE', 'Complete your profile to continue.');
+    if (!session.user.onboardingCompleted || !session.user.phoneNumber || !session.user.phoneNumberVerified) throw new ApiError(403, 'PROFILE_INCOMPLETE', 'Complete your profile to continue.');
   }
 }

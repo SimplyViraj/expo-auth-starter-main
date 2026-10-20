@@ -34,7 +34,7 @@ Shared public JSON configuration lives in ../shared and is explicitly watched by
 
 Registration links use /register; /sign-up redirects for compatibility. Home is /(app); /dashboard redirects for compatibility. Root routing still follows session/onboarding state, with server authorization enforced by Nest.
 
-Phone/SMS verification has no existing implementation and is not represented by a placeholder route.
+Phone verification lives at app/(app)/(onboarding)/verify-phone.tsx. SMS login lives at app/(auth)/phone-sign-in.tsx. Twilio credentials stay in backend/.env. See [phone verification](../docs/phone-verification.md) for setup, migration and testing.
 
 ~~~sh
 npm run check

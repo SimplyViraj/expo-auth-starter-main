@@ -14,7 +14,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "node prisma/seed.ts",
     "check": "npm run db:generate && npm run typecheck && npm run build && npm test",
-    "test:standalone": "npm run build && node test/standalone-smoke.mjs"
+    "test:standalone": "npm run build && node test/standalone-smoke.mjs",
+    "test:baseline": "node test/legacy-baseline-smoke.mjs"
   },
   "dependencies": {
     "@better-auth/core": "1.6.23",

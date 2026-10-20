@@ -21,6 +21,8 @@ backend/src/modules owns auth, identity, sessions, authorization, onboarding, an
 
 shared contains public app identity and auth-policy JSON only. Metro watches that folder explicitly and excludes backend. Backend build/test code reads the same public files. No frontend npm dependency is required to start the compiled API.
 
-backend/legacy-expo is the preserved earlier Expo/Drizzle server, including its old tests and migrations. It is not an active server entry point. Its independent test package keeps archived maintenance separate from the mobile dependency graph.
+The old Expo server and its ORM tooling have been removed. Historical SQL fixtures live in backend/test/fixtures/pre-prisma; the standalone baseline regression uses them without an archived server or additional database library.
 
 Use frontend boundary tests and static export/client-secret auditing to detect accidental server imports. Use backend HTTP tests with a disposable PostgreSQL database and the compiled dependency-isolation check for server verification.
+
+Phone authentication endpoints are validated Better Auth plugin routes handled by AuthController. PhoneService applies challenge ownership, purpose, cooldown, attempt and consumption rules; TwilioVerifyProvider handles external verification. OnboardingService and AuthorizationService enforce verified phone ownership. The client uses the existing authenticated fetch/cookie transport for both linking and SMS login. See [phone verification](phone-verification.md).

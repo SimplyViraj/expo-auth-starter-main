@@ -67,7 +67,7 @@ export default function SignInScreen() {
 
   return (
     <Screen
-      scroll={false}
+      scroll
       contentStyle={{
         justifyContent: "center",
         width: "100%",
@@ -151,6 +151,7 @@ export default function SignInScreen() {
           onPress={() => void handleSubmit(submit)()}
         />
 
+        <Button label="Sign in with mobile number" variant="secondary" disabled={isSubmitting} onPress={() => router.push('/phone-sign-in')} />
         <SocialAuthButtons />
 
         <Link href="/register" asChild>

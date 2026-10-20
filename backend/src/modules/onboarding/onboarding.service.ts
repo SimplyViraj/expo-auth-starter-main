@@ -8,6 +8,9 @@ import type { CompleteOnboardingDto, CompleteOnboardingResponseDto } from './dto
 export class OnboardingService {
   constructor(private readonly prisma: PrismaService) {}
   async complete(userId: string, input: CompleteOnboardingDto): Promise<CompleteOnboardingResponseDto> {
+    const existing = await this.prisma.user.findUnique({ where: { id: userId }, select: { phoneNumber: true, phoneNumberVerified: true } });
+    if (!existing) throw new ApiError(404, 'ACCOUNT_NOT_FOUND', 'Please sign in again.');
+    if (!existing.phoneNumber || !existing.phoneNumberVerified) throw new ApiError(403, 'PHONE_VERIFICATION_REQUIRED', 'Verify your mobile number before finishing setup.');
     try {
       const user = await this.prisma.user.update({
         where: { id: userId },

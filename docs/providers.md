@@ -84,3 +84,7 @@ App Store deletion additionally requires revoking the user's Apple authorization
 Users can enable app lock during onboarding or under **Settings → App lock**. Both controls use the same local, user-scoped preference, which covers protected content after cold start or backgrounding until the system prompt succeeds. Cancelling keeps the app locked; sign-out remains available.
 
 Biometrics neither create nor extend a Better Auth session and never authorize APIs. They require a native development build.
+
+## Twilio Verify
+
+Phone verification is required during onboarding and verified numbers support SMS login. Configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN and TWILIO_VERIFY_SERVICE_SID only in backend/.env, with a six-digit Verify SMS service. See [phone setup](phone-verification.md) for the additive Prisma migration, REST contracts, rate limits and verification scope.

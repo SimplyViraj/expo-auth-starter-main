@@ -1,6 +1,6 @@
 # NestJS backend for the existing Expo app
 
-This is a separate TypeScript REST server using NestJS, Prisma, and PostgreSQL. The Expo client now lives in ../mobile. The original Expo API/Drizzle implementation is preserved under legacy-expo and is not mounted by the mobile app.
+This is a separate TypeScript REST server using NestJS, Prisma, and PostgreSQL. The Expo client now lives in ../mobile. Prisma is the database access layer; the former Expo server and its ORM dependencies have been removed.
 
 The backend retains Better Auth 1.6.23 as the authentication engine so the Expo client's cookies, OTPs, recovery, Google, Apple, account deletion, and secure storage protocol stay compatible. Nest owns application controllers, DTOs, guards, authorization, error handling, and composition. Authentication requests are validated by Better Auth's endpoint schemas. Application requests use Nest's global ValidationPipe and class-validator DTOs.
 
@@ -39,7 +39,7 @@ On a physical device, use the computer's LAN IP, e.g. http://192.168.1.20:3000. 
 
 For Expo Go, use npx expo start --go from mobile/. Email/password and browser Google OAuth use the existing client. Native Google/Apple and device capabilities retain their existing development-build requirements. No new native package is added. Restart Metro once after adding the backend so its updated exclusion rules take effect.
 
-For a tunnel, forward it to Nest port 3000. Set backend BETTER_AUTH_URL and mobile EXPO_PUBLIC_API_URL to the SAME tunnel HTTPS origin. Your original mixed .env is preserved in legacy-expo/.env. Add the actual Expo web origin to AUTH_TRUSTED_ORIGINS. Browser cookies use credentials and exact CORS origins; production web/API should share a site because cross-site cookie policies vary.
+For a tunnel, forward it to Nest port 3000. Set backend BETTER_AUTH_URL and mobile EXPO_PUBLIC_API_URL to the SAME tunnel HTTPS origin. Your original mixed .env is preserved in .backups/original-expo.env. Add the actual Expo web origin to AUTH_TRUSTED_ORIGINS. Browser cookies use credentials and exact CORS origins; production web/API should share a site because cross-site cookie policies vary.
 
 Google's Web OAuth redirect URI is BETTER_AUTH_URL + /api/auth/callback/google. Browser OAuth uses the existing Expo plugin. Native provider configuration remains in docs/providers.md.
 
@@ -64,13 +64,15 @@ All variables below belong in backend/.env, except the explicitly identified Exp
 
 App name, URL scheme, and Apple bundle ID come from ../shared/app-identity.json. Password policy comes from ../shared/auth-policy.json. Keep shared/ beside backend/ when deploying. Never prefix database, email, auth, or OAuth secrets with EXPO_PUBLIC_.
 
-## Existing Drizzle databases
+## Existing pre-Prisma databases
 
-The initial Prisma migration targets a NEW database. Do not run it against a database already containing the Drizzle tables. No existing database is modified by installation or tests.
+The initial Prisma migration targets a NEW database. Do not run it against a database already containing the pre-Prisma tables. No existing database is modified by installation or tests.
 
 For an existing deployment: back up the database, compare its schema against schema.prisma using prisma migrate diff, reconcile types/indexes/defaults in staging, then baseline the reviewed initial migration with prisma migrate resolve --applied 20261017000000_initial. Do not use migrate reset or db push on production. Validate sessions, accounts, recovery, and deletion against a staging copy before switching traffic. SQL mappings retain the original table and column names, but timestamp precision and generated indexes still need review.
 
-Keep the same BETTER_AUTH_SECRET when preserving sessions/encrypted OAuth tokens. The legacy Drizzle migration history is preserved in legacy-expo/drizzle.
+For P3005, use the [reviewed legacy baseline procedure](../docs/database-baseline.md). It includes transactional alignment SQL, a frozen initial-schema comparison and a disposable regression check. Do not simply mark a mismatched schema as applied.
+
+Keep the same BETTER_AUTH_SECRET when preserving sessions/encrypted OAuth tokens. The original SQL history is retained as dependency-free fixtures in test/fixtures/pre-prisma.
 
 The backend .npmrc skips automatic peer installation because Better Auth declares optional frontend integrations. Its server core and adapters are explicitly pinned to the same version as the Expo client.
 
@@ -148,6 +150,10 @@ Verified locally with Node 24.16.0 and an isolated PostgreSQL 17 database:
 
 Integration tests replace only the email transport and exercise the real auth engine and database. Live Resend delivery, Google/Apple authorization, and physical-device behavior have not been verified.
 
-The temporary verification database container was removed. The original environment and application database were preserved. The subsequent frontend restructure is documented in the root README. No existing Drizzle database was migrated.
+The temporary verification database container was removed. The original environment and application database were preserved. The subsequent frontend restructure is documented in the root README. No existing pre-Prisma database was migrated during that initial verification.
 
 See [19 October restructure verification](../docs/verification.md) for checks after separating the mobile project.
+
+Phone onboarding and SMS login use Twilio Verify and an additive Prisma migration. See [phone setup and REST contracts](../docs/phone-verification.md). Existing users need a verified phone before onboarded resources are accessible.
+
+Drizzle ORM, its CLI, configuration and archived server have been removed. Better Auth 1.6.23 still lists @better-auth/drizzle-adapter as an upstream dependency; that unused adapter is retained in the normal npm dependency tree. Neither application declares or installs drizzle-orm or drizzle-kit. SQL baseline fixtures require no ORM.
