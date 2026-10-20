@@ -7,6 +7,7 @@ export default function OnboardingLayout() {
 
   return (
     <Stack
+      initialRouteName="complete-profile"
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },

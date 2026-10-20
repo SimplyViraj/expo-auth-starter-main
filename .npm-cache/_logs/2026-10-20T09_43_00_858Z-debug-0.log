@@ -1,0 +1,11 @@
+0 verbose cli C:\Program Files\nodejs\node.exe C:\Program Files\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@11.13.0
+2 info using node@v24.16.0
+3 silly config load:file:C:\Program Files\nodejs\node_modules\npm\npmrc
+4 silly config load:file:C:\Users\saivi\Downloads\expo-auth-starter-main\expo-auth-starter-main\mobile\.npmrc
+5 silly config load:file:C:\Users\saivi\.npmrc
+6 silly config load:file:C:\Users\saivi\Downloads\expo-auth-starter-main\expo-auth-starter-main\mobile\etc\npmrc
+7 verbose title npm install expo-image-picker@~57.0.20 expo-image-manipulator@~57.0.21
+8 verbose argv "install" "--prefix" "mobile" "expo-image-picker@~57.0.20" "expo-image-manipulator@~57.0.21" "--cache" ".npm-cache" "--no-audit" "--no-fund"
+9 verbose logfile logs-max:10 dir:C:\Users\saivi\Downloads\expo-auth-starter-main\expo-auth-starter-main\.npm-cache\_logs\2026-10-20T09_43_00_858Z-
+10 verbose logfile C:\Users\saivi\Downloads\expo-auth-starter-main\expo-auth-starter-main\.npm-cache\_logs\2026-10-20T09_43_00_858Z-debug-0.log

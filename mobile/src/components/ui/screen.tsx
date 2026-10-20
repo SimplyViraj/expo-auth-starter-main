@@ -28,6 +28,8 @@ export function Screen({ children, contentStyle, hasHeader = false, scroll = tru
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {scroll ? (
         <ScrollView
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           contentInsetAdjustmentBehavior="automatic"
           showsVerticalScrollIndicator={false}
           style={{ flex: 1 }}

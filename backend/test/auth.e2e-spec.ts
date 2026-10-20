@@ -278,6 +278,47 @@ describe('owned sessions and deletion', () => {
   });
 });
 
+describe('member profile lifecycle', () => {
+  it('protects the profile, persists edits, and exposes the changes in the session', async () => {
+    await request(app.getHttpServer()).get('/api/profile').expect(401);
+    await request(app.getHttpServer()).patch('/api/profile').send({ name: 'No Session' }).expect(401);
+    const { agent, email } = await verified();
+    await agent.get('/api/profile').expect(403);
+    const username = 'member_' + randomUUID().replace(/-/g, '').slice(0, 12);
+    await agent.patch('/api/onboarding').send({ username }).expect(200);
+    const original = await agent.get('/api/profile').expect(200);
+    expect(original.body.user).toMatchObject({ email, username, phoneNumberVerified: true });
+    expect(original.body.user).not.toHaveProperty('accounts');
+    const updated = await agent.patch('/api/profile').send({ name: '  AAyuva Member  ', username: username.toUpperCase() }).expect(200);
+    expect(updated.body.user).toMatchObject({ name: 'AAyuva Member', username, email });
+    expect((await agent.get('/api/profile')).body.user.name).toBe('AAyuva Member');
+    expect((await agent.get('/api/auth/get-session')).body.user.name).toBe('AAyuva Member');
+    await agent.post('/api/auth/sign-out').send({}).expect(200);
+    await agent.get('/api/profile').expect(401);
+    await agent.patch('/api/profile').send({ name: 'Signed Out' }).expect(401);
+  });
+
+  it('enforces database uniqueness during concurrent profile edits without changing contact details', async () => {
+    const a = await verified(), b = await verified();
+    const suffix = randomUUID().replace(/-/g, '').slice(0, 10);
+    await a.agent.patch('/api/onboarding').send({ username: 'a_' + suffix }).expect(200);
+    await b.agent.patch('/api/onboarding').send({ username: 'b_' + suffix }).expect(200);
+    const username = 'shared_' + suffix;
+    const results = await Promise.all([
+      a.agent.patch('/api/profile').send({ username }),
+      b.agent.patch('/api/profile').send({ username: username.toUpperCase() }),
+    ]);
+    expect(results.map((result) => result.status).sort()).toEqual([200, 409]);
+    expect(results.find((result) => result.status === 409)?.body.error.code).toBe('USERNAME_TAKEN');
+    const bProfile = await b.agent.get('/api/profile').expect(200);
+    await a.agent.patch('/api/profile').send({ id: bProfile.body.user.id, name: 'Other Member' }).expect(400);
+    await a.agent.patch('/api/profile').send({ email: b.email }).expect(400);
+    await a.agent.patch('/api/profile').send({ phoneNumberVerified: true }).expect(400);
+    expect((await b.agent.get('/api/profile')).body.user.email).toBe(b.email);
+    expect((await a.agent.get('/api/profile')).body.user.email).toBe(a.email);
+  });
+});
+
 
 describe('Twilio-backed phone onboarding and login', () => {
   it('requires verified phone ownership to complete onboarding, including previously completed accounts', async () => {

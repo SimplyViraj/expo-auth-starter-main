@@ -8,7 +8,7 @@ export default function EntryPage() {
   if (phase === 'checking') return null;
 
   const destination =
-    phase === 'signed-out' ? '/sign-in' : phase === 'needs-onboarding' ? '/profile' : '/(app)';
+    phase === 'signed-out' ? '/sign-in' : phase === 'needs-onboarding' ? '/complete-profile' : '/(app)';
 
   return <Redirect href={destination} />;
 }

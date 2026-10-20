@@ -9,6 +9,7 @@ const iconMap = {
   arrowRight: { ios: 'arrow.right', android: 'arrow_forward', web: 'arrow_forward' },
   apple: { ios: 'apple.logo', android: 'login', web: 'login' },
   bell: { ios: 'bell', android: 'notifications', web: 'notifications' },
+  calendar: { ios: 'calendar', android: 'calendar_month', web: 'calendar_month' },
   check: { ios: 'checkmark', android: 'check', web: 'check' },
   checkCircle: { ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' },
   chevronRight: { ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' },
@@ -21,6 +22,7 @@ const iconMap = {
   filter: { ios: 'slider.horizontal.3', android: 'filter_list', web: 'filter_list' },
   folder: { ios: 'folder', android: 'folder', web: 'folder' },
   help: { ios: 'questionmark.circle', android: 'help', web: 'help' },
+  wellness: { ios: 'leaf', android: 'spa', web: 'spa' },
   home: { ios: 'house', android: 'home', web: 'home' },
   info: { ios: 'info.circle', android: 'info', web: 'info' },
   lock: { ios: 'lock.fill', android: 'lock', web: 'lock' },
@@ -39,7 +41,7 @@ export type IconName = keyof typeof iconMap;
 
 type IconProps = Omit<SymbolViewProps, 'name' | 'tintColor'> & {
   name: IconName;
-  color?: string;
+  color?: SymbolViewProps['tintColor'];
   size?: number;
 };
 

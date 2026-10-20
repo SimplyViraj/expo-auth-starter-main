@@ -17,7 +17,8 @@ The source layout is:
 app/
   _layout.tsx, index.tsx
   (auth)/                 sign-in, register, email verification/recovery
-  (app)/                  protected home, onboarding, account/app-lock screens
+  (app)/                  protected member tabs, onboarding, account/app-lock screens
+    (tabs)/               Home, Appointments, Wellness, Profile
   (public)/               public landing
 src/
   features/auth/
@@ -25,7 +26,7 @@ src/
   components/ui/, components/feedback/
   lib/api/, lib/config/, lib/storage/, lib/device/
   providers/, theme/, types/
-  features/               existing account, biometrics, home, onboarding, public
+  features/               account, appointments, biometrics, home, onboarding, profile, public, wellness
 assets/images/, assets/icons/, assets/fonts/
 __tests__/
 ~~~
@@ -33,6 +34,12 @@ __tests__/
 Shared public JSON configuration lives in ../shared and is explicitly watched by Metro. Native icon assets retain their Expo .icon format under assets/icons/expo.icon. The UI currently uses system fonts; assets/fonts contains the custom-font placement guide.
 
 Registration links use /register; /sign-up redirects for compatibility. Home is /(app); /dashboard redirects for compatibility. Root routing still follows session/onboarding state, with server authorization enforced by Nest.
+
+Member tabs are Home (`/(app)`), Appointments (`/appointments`), Wellness (`/wellness`), and Profile (`/profile`). Profile setup uses `/complete-profile` to keep onboarding separate from the member Profile tab. Tabs and account routes require completed onboarding and verified phone ownership. The existing biometric gate also covers the member shell.
+
+Profile loads the current account from `GET /api/profile` and saves name/username through `PATCH /api/profile`. Name is trimmed and must contain 2–80 characters; usernames follow the onboarding rules and remain unique. Email and verified mobile number are read-only. Unknown fields, identity changes, verification flags, and empty updates are rejected by the server. Member profile queries are scoped by user ID and cleared on logout.
+
+Appointments and Wellness currently show coming-soon placeholders. See [member shell verification](../docs/member-shell.md) for behavior and checks.
 
 Phone verification lives at app/(app)/(onboarding)/verify-phone.tsx. SMS login lives at app/(auth)/phone-sign-in.tsx. Twilio credentials stay in backend/.env. See [phone verification](../docs/phone-verification.md) for setup, migration and testing.
 

@@ -11,7 +11,7 @@ mobile/app routes
 
 mobile and backend have separate package manifests, lockfiles, TypeScript settings, dependencies, environment files, and checks. Root npm scripts delegate to the selected application; there is no dependency hoisting.
 
-mobile/app owns Expo navigation. Authentication routes are under (auth), protected routes under (app), and the public landing under (public). The root entry derives its destination from server session/onboarding state. Protected home lives at (app)/index.tsx; account settings, deletion, app lock, and onboarding keep their existing feature implementations.
+mobile/app owns Expo navigation. Authentication routes are under (auth), protected routes under (app), and the public landing under (public). The root entry derives its destination from server session/onboarding state. The member shell lives under (app)/(tabs), with Home, Appointments, Wellness, and Profile tabs. Onboarding profile setup uses /complete-profile; the member Profile tab uses /profile. Account settings, deletion, app lock, and onboarding keep their existing feature implementations. The profile API requires both SessionGuard and OnboardedGuard and always operates on the session user ID.
 
 mobile/src/features/auth contains components, hooks, services, schemas, types, utilities, and screens. Authentication/session provider composition lives in src/providers. Generic feedback belongs in src/components/feedback and presentation primitives in src/components/ui. Client-only environment and public constants belong in src/lib/config; API and storage adapters remain under src/lib.
 

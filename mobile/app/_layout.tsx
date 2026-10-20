@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AppToaster } from '@/components/feedback/app-toaster';
+import { LoadingIndicator } from '@/components/feedback/loading-indicator';
 import { Button } from '@/components/ui/button';
 import { HeroPanel } from '@/components/ui/hero-panel';
 import { Screen } from '@/components/ui/screen';
@@ -36,7 +37,11 @@ function RootNavigator() {
   }, [isStarting]);
 
   if (isStarting) {
-    return null;
+    return (
+      <Screen scroll={false} contentStyle={{ justifyContent: 'center' }}>
+        <LoadingIndicator label="Opening AAyuva…" />
+      </Screen>
+    );
   }
 
   if (isInitialSessionUnavailable) {

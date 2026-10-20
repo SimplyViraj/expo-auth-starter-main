@@ -1,14 +1,13 @@
 import { router } from 'expo-router';
 import { Stack } from 'expo-router/stack';
-import { Alert, View } from 'react-native';
 
 import { HeaderIconButton } from '@/components/ui/header-icon-button';
 import { useAuth } from '@/providers/auth-provider';
 import { useAppTheme } from '@/theme/theme-provider';
 
 export default function AppLayout() {
-  const { isSigningOut, phase, signOut } = useAuth();
-  const { colors, spacing } = useAppTheme();
+  const { phase } = useAuth();
+  const { colors } = useAppTheme();
 
   function goBack() {
     if (router.canGoBack()) {
@@ -19,20 +18,13 @@ export default function AppLayout() {
     router.replace('/(app)');
   }
 
-  function confirmSignOut() {
-    Alert.alert('Sign out?', 'You can sign back in at any time.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
-    ]);
-  }
-
   const backButton = () => (
     <HeaderIconButton accessibilityLabel="Go back" icon="arrowLeft" onPress={goBack} />
   );
 
   return (
     <Stack
-      initialRouteName={phase === 'needs-onboarding' ? '(onboarding)' : 'index'}
+      initialRouteName={phase === 'needs-onboarding' ? '(onboarding)' : '(tabs)'}
       screenOptions={{
         headerShown: true,
         headerBackButtonDisplayMode: 'minimal',
@@ -48,30 +40,7 @@ export default function AppLayout() {
       </Stack.Protected>
 
       <Stack.Protected guard={phase === 'ready'}>
-        <Stack.Screen
-          name="index"
-          options={{
-            title: 'Home',
-            gestureEnabled: false,
-            headerLeft: () => null,
-            headerRight: () => (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                <HeaderIconButton
-                  accessibilityLabel="Open settings"
-                  icon="settings"
-                  onPress={() => router.push('/settings')}
-                />
-                <HeaderIconButton
-                  accessibilityLabel="Sign out"
-                  color={colors.danger}
-                  disabled={isSigningOut}
-                  icon="signOut"
-                  onPress={confirmSignOut}
-                />
-              </View>
-            ),
-          }}
-        />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="dashboard" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ title: 'Settings', headerLeft: backButton }} />
         <Stack.Screen name="delete-account" options={{ title: 'Delete account', headerLeft: backButton }} />

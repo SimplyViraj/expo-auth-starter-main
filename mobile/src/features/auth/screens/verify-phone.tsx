@@ -11,6 +11,6 @@ export default function VerifyPhoneScreen() {
   return <Screen>
     <HeroPanel title={verified ? 'Mobile number verified' : 'Verify your mobile number'} body={verified ? user.phoneNumber! : 'Verify a number you own to finish setup. You can also use it to sign in.'} />
     {!verified ? <Card><PhoneCodeForm purpose="verify" initialPhone={user?.phoneNumber ?? ''} onVerified={refreshSession} /></Card> : null}
-    <Button label="Continue setup" variant={verified ? 'primary' : 'ghost'} onPress={() => router.replace('/profile')} />
+    <Button label="Continue setup" variant={verified ? 'primary' : 'ghost'} onPress={() => router.replace('/complete-profile')} />
   </Screen>;
 }

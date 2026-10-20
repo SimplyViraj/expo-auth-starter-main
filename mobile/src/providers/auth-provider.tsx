@@ -23,6 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const sessionQuery = authClient.useSession();
   const [hasCompletedInitialCheck, setHasCompletedInitialCheck] = useState(Boolean(sessionQuery.data));
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const signingOut = useRef(false);
   const hasShownRefreshError = useRef(false);
 
   if (!hasCompletedInitialCheck && !sessionQuery.isPending && !sessionQuery.error) {
@@ -51,6 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signOut() {
+    if (signingOut.current) return;
+    signingOut.current = true;
     setIsSigningOut(true);
 
     try {
@@ -63,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      await queryClient.cancelQueries();
       queryClient.clear();
       await sessionQuery.refetch();
     } catch {
@@ -70,6 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         description: 'Check your connection and try again.',
       });
     } finally {
+      signingOut.current = false;
       setIsSigningOut(false);
     }
   }

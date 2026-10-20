@@ -73,7 +73,7 @@ export default function SettingsScreen() {
 
       <View style={{ alignItems: 'center', paddingVertical: spacing.md }}>
         <AppText variant="caption" tone="muted">
-          Built by <AppText variant="caption" style={{ fontWeight: '900' }}>Code with Nomi</AppText>
+          <AppText variant="caption" style={{ fontWeight: '900' }}>AAyuva</AppText>
         </AppText>
       </View>
     </Screen>

@@ -47,11 +47,11 @@ export async function apiRequest<T>(path: `/api/${string}`, options: ApiRequestO
   const payload = await readJson(response);
 
   if (!response.ok) {
-    if (response.status === 401) {
+    const error = payload as ApiErrorBody | null;
+    if (response.status === 401 || error?.error?.code === 'PROFILE_INCOMPLETE') {
       revalidateAuthSession();
     }
 
-    const error = payload as ApiErrorBody | null;
     throw new ApiError(
       error?.error?.message ?? 'Something went wrong. Please try again.',
       response.status,
