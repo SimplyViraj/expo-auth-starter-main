@@ -27,9 +27,9 @@ export function Input({
   spellCheck,
   ...props
 }: InputProps) {
-  const { colors, radius, spacing } = useAppTheme();
+  const { colors, spacing } = useAppTheme();
   const isQuiet = variant === 'quiet';
-  const inputHeight = size === 'sm' ? 44 : size === 'lg' ? 60 : 52;
+  const inputHeight = size === 'sm' ? 44 : size === 'lg' ? 52 : 46;
 
   return (
     <View style={{ gap: spacing.sm }}>
@@ -43,8 +43,8 @@ export function Input({
             gap: spacing.sm,
             borderWidth: 1,
             borderColor: error ? colors.danger : isQuiet ? 'transparent' : colors.border,
-            borderRadius: radius.lg,
-            paddingHorizontal: spacing.lg,
+            borderRadius: 12,
+            paddingHorizontal: spacing.md,
             backgroundColor: variant === 'filled' ? colors.surfaceStrong : colors.surface,
           },
         ]}>

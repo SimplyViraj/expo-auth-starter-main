@@ -75,4 +75,6 @@ Edit shared/app-identity.json for product/native identity and shared/auth-policy
 
 See [architecture](docs/architecture.md), [provider setup](docs/providers.md), [production](docs/production.md), and [mobile setup](mobile/README.md).
 
+Memberships support Individual, Couple and Group plans (up to four people), shared wellness programs, separate participant allowances/attendance, earned credits, and opt-in recurring billing. See [membership rules, API and payment integration](docs/membership.md). Payments and recurring authorization remain pending until a real provider is connected; no frontend action simulates payment or activation. Apply the additive membership migrations before using these screens.
+
 Verification results for this restructure are recorded in [verification](docs/verification.md).

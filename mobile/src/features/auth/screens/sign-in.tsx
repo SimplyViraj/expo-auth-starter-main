@@ -1,6 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, router } from "expo-router";
-import { Pressable, View } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { Image, ImageBackground, Pressable, View } from "react-native";
 import { Controller, useForm } from "react-hook-form";
 
 import { AppText } from "@/components/ui/app-text";
@@ -24,7 +25,7 @@ import { useAppTheme } from "@/theme/theme-provider";
 
 export default function SignInScreen() {
   const { refreshSession } = useAuth();
-  const { spacing } = useAppTheme();
+  const { colors, spacing } = useAppTheme();
   const {
     control,
     handleSubmit,
@@ -69,24 +70,43 @@ export default function SignInScreen() {
     <Screen
       scroll
       contentStyle={{
-        justifyContent: "center",
         width: "100%",
         maxWidth: 480,
         alignSelf: "center",
-        gap: spacing.md,
-        paddingHorizontal: 0,
+        gap: 0,
+        padding: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
       }}
     >
+      <StatusBar style="light" />
+      <ImageBackground
+        source={require('../../../../assets/images/aayuvya background.png')}
+        resizeMode="cover"
+        style={{ height: 286, justifyContent: 'center', alignItems: 'center' }}
+      >
+        <Image
+          source={require('../../../../assets/images/logo-white.png')}
+          accessibilityLabel="Aayuvya · Prevent, Perform, Prevail"
+          resizeMode="contain"
+          style={{ width: 156, height: 64 }}
+        />
+      </ImageBackground>
       <View
         style={{
           gap: spacing.lg,
           paddingHorizontal: spacing.xl,
-          paddingVertical: spacing.xl,
+          paddingTop: spacing.xl,
+          paddingBottom: spacing.xxl,
+          marginTop: -24,
+          borderTopLeftRadius: 24,
+          borderTopRightRadius: 24,
+          backgroundColor: colors.background,
         }}
       >
         <AuthFormHeader
           title="Welcome back"
-          body="Sign in with your email and password."
+          body="Your preventive care, all in one place. Sign in to continue."
         />
 
         <Controller
@@ -151,7 +171,7 @@ export default function SignInScreen() {
           onPress={() => void handleSubmit(submit)()}
         />
 
-        <Button label="Sign in with mobile number" variant="secondary" disabled={isSubmitting} onPress={() => router.push('/phone-sign-in')} />
+        <Button label="Sign in with mobile number" variant="outline" disabled={isSubmitting} onPress={() => router.push('/phone-sign-in')} />
         <SocialAuthButtons />
 
         <Link href="/register" asChild>

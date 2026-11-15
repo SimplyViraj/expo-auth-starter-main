@@ -81,6 +81,9 @@ export default function ProfileScreen() {
 
       {!editor ? (
         <>
+          <Link href="/memberships" asChild>
+            <Button label="Manage memberships" icon="wellness" variant="outline" disabled={isSigningOut} />
+          </Link>
           <Link href="/settings" asChild>
             <Button label="Settings" icon="settings" variant="outline" disabled={isSigningOut} />
           </Link>

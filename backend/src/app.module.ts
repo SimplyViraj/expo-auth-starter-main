@@ -8,11 +8,12 @@ import { OnboardingModule } from './modules/onboarding/onboarding.module.js';
 import { SessionsModule } from './modules/sessions/sessions.module.js';
 import { DemoModule } from './modules/demo/demo.module.js';
 import { ProfileModule } from './modules/profile/profile.module.js';
+import { MembershipsModule } from './modules/memberships/memberships.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: process.env.NODE_ENV === 'test', validate: validateEnvironment }),
-    DatabaseModule, HealthModule, AuthModule, OnboardingModule, SessionsModule, DemoModule, ProfileModule,
+    DatabaseModule, HealthModule, AuthModule, OnboardingModule, SessionsModule, DemoModule, ProfileModule, MembershipsModule,
   ],
 })
 export class AppModule {}

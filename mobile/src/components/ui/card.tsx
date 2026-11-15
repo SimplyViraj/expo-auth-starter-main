@@ -13,7 +13,7 @@ export function Card({ style, ...props }: ViewProps) {
           overflow: 'hidden',
           borderWidth: 1,
           borderColor: colors.border,
-          borderRadius: radius.xl,
+          borderRadius: radius.md,
           padding: spacing.lg,
           backgroundColor: colors.surface,
           boxShadow: '0 1px 2px rgba(14, 15, 12, 0.06)',

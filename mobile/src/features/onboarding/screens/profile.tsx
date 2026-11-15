@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { Redirect } from 'expo-router';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 
@@ -42,6 +42,10 @@ export default function ProfileOnboardingScreen() {
     mode: "onChange",
   });
   const biometricAvailable = availability?.status === "available";
+
+  if (!user?.phoneNumber || !user.phoneNumberVerified) {
+    return <Redirect href="/verify-phone" />;
+  }
 
   async function updateAppLock(enabled: boolean) {
     const result = await setAppLockEnabled(enabled);
@@ -118,8 +122,8 @@ export default function ProfileOnboardingScreen() {
 
       <Card>
         <AppText variant="subtitle">Mobile number</AppText>
-        <AppText tone="muted">{user?.phoneNumberVerified ? user.phoneNumber : 'Verify a mobile number to finish setup and use SMS login.'}</AppText>
-        {!user?.phoneNumberVerified ? <Button label="Verify mobile number" onPress={() => router.push('/verify-phone')} /> : <AppText tone="primary">Verified</AppText>}
+        <AppText tone="muted">{user?.phoneNumber}</AppText>
+        <AppText tone="primary">Verified</AppText>
       </Card>
 
       <Card>

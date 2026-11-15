@@ -1,7 +1,7 @@
 export const typography = {
-  hero: 34,
-  title: 28,
-  subtitle: 18,
-  body: 15,
-  caption: 12,
+  hero: 28,
+  title: 23,
+  subtitle: 17,
+  body: 14,
+  caption: 11,
 } as const;

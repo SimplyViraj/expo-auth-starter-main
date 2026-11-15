@@ -1,0 +1,21 @@
+export type AccountType = 'INDIVIDUAL' | 'COUPLE' | 'GROUP';
+export type Tier = 'STARTER' | 'CORE' | 'ELITE';
+export type Program = { id: string; name: string; sessionMinutes: number; sessionA: string; sessionB: string; note: string };
+export type PlanSelection = { accountType: AccountType; tier: Tier; months: number };
+export type Quote = PlanSelection & { catalogVersion: string; amountPaise: number; currency: string; sessionsPerMonth: number; totalSessionsPerPerson: number; allowanceScope: 'PER_PERSON' };
+export type Catalog = { version: string; paymentAvailable: boolean; accountTypes: AccountType[]; tiers: Tier[]; durations: number[]; programs: Program[]; plans: Quote[]; terms: string[]; groupMaximum: number; firstCreditSessions: number; creditValidityMonths: number; creditSessionRates: Record<string, number> };
+export type MemberAccount = { id: string; name: string; accountType: AccountType; participants: { id: string; name: string; position: number; attendedSessions?: number; creditBalance?: number; credits?: { id: string; points: number; earnedAt: string; expiresAt: string }[] }[] };
+export type CreateMemberAccount = { name: string; accountType: AccountType; creationKey: string; participants: { name: string }[] };
+export type PurchaseInput = PlanSelection & { catalogVersion: string; accountId: string; programId: string; idempotencyKey: string; autoRenew?: boolean };
+export type Recurring = { id: string; status: 'PENDING_SETUP' | 'ACTIVE' | 'CANCEL_REQUESTED' | 'CANCELLED' | 'PRICE_REVIEW'; nextBillingAt: string | null; cycle: number };
+export type Membership = {
+  id: string; account: MemberAccount; tier: Tier; months: number; program: Program;
+  amountPaise: number; currency: string; sessionsPerMonth: number; allowanceScope: 'PER_PERSON';
+  status: 'PENDING_PAYMENT' | 'ACTIVE' | 'EXPIRED' | 'CANCELLED';
+  startsAt: string | null; endsAt: string | null; createdAt: string; paymentAvailable: boolean;
+  recurring: Recurring | null;
+  balances: { participantId: string; monthIndex: number; startsAt: string; endsAt: string; included: number; used: number; remaining: number; current: boolean; attendance: { id: string; attendedAt: string }[] }[];
+};
+export const titleCase = (value: string) => value.charAt(0) + value.slice(1).toLowerCase();
+export const durationLabel = (months: number) => ({ 1: 'Monthly', 3: 'Quarterly', 6: 'Half yearly', 12: 'Yearly' })[months] ?? `${months} months`;
+export const formatPrice = (paise: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(paise / 100);

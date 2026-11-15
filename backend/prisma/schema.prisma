@@ -22,7 +22,265 @@ model User {
   phoneChallenges       PhoneChallenge[]
   sessions              Session[]
   accounts              Account[]
+  memberAccounts        MemberAccount[]
   @@map("user")
+}
+
+enum MembershipAccountType {
+  INDIVIDUAL
+  COUPLE
+  GROUP
+}
+
+enum MembershipStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+model MemberAccount {
+  id           String @id @default(uuid()) @db.Uuid
+  ownerId      String @map("owner_id")
+  owner        User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  accountType  MembershipAccountType @map("account_type")
+  name         String
+  creationKey  String @map("creation_key") @db.Uuid
+  participants MemberParticipant[]
+  memberships  Membership[]
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(3)
+  @@unique([ownerId, creationKey])
+  @@index([ownerId])
+  @@map("member_account")
+}
+
+model MemberParticipant {
+  id        String @id @default(uuid()) @db.Uuid
+  accountId String @map("account_id") @db.Uuid
+  account   MemberAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  name      String
+  position  Int
+  allowances MembershipAllowance[]
+  attendedSessions Int @default(0) @map("attended_sessions")
+  creditProgress MemberCreditProgress[]
+  credits MemberCredit[]
+  @@unique([accountId, position])
+  @@map("member_participant")
+}
+
+model Membership {
+  id               String @id @default(uuid()) @db.Uuid
+  ownerId          String @map("owner_id")
+  accountId        String @map("account_id") @db.Uuid
+  account          MemberAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  idempotencyKey   String @map("idempotency_key") @db.Uuid
+  requestHash      String @map("request_hash")
+  tier             String
+  months           Int
+  programId        String @map("program_id")
+  catalogVersion   String @map("catalog_version")
+  catalog          MembershipCatalog @relation(fields: [catalogVersion], references: [version], onDelete: Restrict)
+  catalogProgram   CatalogProgram @relation(fields: [catalogVersion, programId], references: [catalogVersion, programId], onDelete: Restrict)
+  amountPaise      Int @map("amount_paise")
+  currency         String @default("INR")
+  sessionsPerMonth Int @map("sessions_per_month")
+  allowanceScope   String @map("allowance_scope")
+  status           MembershipStatus @default(PENDING_PAYMENT)
+  startsAt         DateTime? @map("starts_at") @db.Timestamp(3)
+  endsAt           DateTime? @map("ends_at") @db.Timestamp(3)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp(3)
+  receipt          MembershipPaymentReceipt?
+  allowances       MembershipAllowance[]
+  recurring        MembershipRecurring? @relation("OriginalMembership")
+  renewalOfId      String? @map("renewal_of_id") @db.Uuid
+  renewalOf        MembershipRecurring? @relation("RenewedMemberships", fields: [renewalOfId], references: [id], onDelete: SetNull)
+  renewalCycle     Int? @map("renewal_cycle")
+  @@unique([renewalOfId, renewalCycle])
+  @@unique([ownerId, idempotencyKey])
+  @@index([accountId, createdAt])
+  @@map("membership")
+}
+
+// Published versions and all their child records are immutable (migration triggers).
+model MembershipCatalog {
+  version String @id
+  status String @default("DRAFT")
+  currency String @default("INR")
+  groupMaximum Int @map("group_maximum")
+  firstCreditSessions Int @map("first_credit_sessions")
+  creditValidityMonths Int @map("credit_validity_months")
+  terms String[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(3)
+  publishedAt DateTime? @map("published_at") @db.Timestamp(3)
+  plans CatalogPlan[]
+  programs CatalogProgram[]
+  therapies CatalogTherapy[]
+  memberships Membership[]
+  current MembershipCatalogCurrent?
+  @@map("membership_catalog")
+}
+
+model MembershipCatalogCurrent {
+  id String @id @default("current")
+  version String @unique
+  catalog MembershipCatalog @relation(fields: [version], references: [version], onDelete: Restrict)
+  @@map("membership_catalog_current")
+}
+
+model CatalogPlan {
+  catalogVersion String @map("catalog_version")
+  catalog MembershipCatalog @relation(fields: [catalogVersion], references: [version], onDelete: Restrict)
+  accountType MembershipAccountType @map("account_type")
+  tier String
+  months Int
+  amountPaise Int @map("amount_paise")
+  sessionsPerMonth Int @map("sessions_per_month")
+  @@id([catalogVersion, accountType, tier, months])
+  @@map("catalog_plan")
+}
+
+model CatalogProgram {
+  catalogVersion String @map("catalog_version")
+  catalog MembershipCatalog @relation(fields: [catalogVersion], references: [version], onDelete: Restrict)
+  programId String @map("program_id")
+  name String
+  position Int
+  sessionMinutes Int @map("session_minutes")
+  creditEverySessions Int @map("credit_every_sessions")
+  creditProgressKey String @map("credit_progress_key")
+  note String @default("")
+  protocols CatalogProtocol[]
+  memberships Membership[]
+  @@id([catalogVersion, programId])
+  @@unique([catalogVersion, position])
+  @@map("catalog_program")
+}
+
+model CatalogProtocol {
+  catalogVersion String @map("catalog_version")
+  programId String @map("program_id")
+  key String
+  description String
+  program CatalogProgram @relation(fields: [catalogVersion, programId], references: [catalogVersion, programId], onDelete: Restrict)
+  steps CatalogProtocolStep[]
+  @@id([catalogVersion, programId, key])
+  @@map("catalog_protocol")
+}
+
+model CatalogProtocolStep {
+  catalogVersion String @map("catalog_version")
+  programId String @map("program_id")
+  protocolKey String @map("protocol_key")
+  position Int
+  // Therapies in one step share the duration; null denotes an untimed adjunct.
+  minutes Int?
+  note String @default("")
+  protocol CatalogProtocol @relation(fields: [catalogVersion, programId, protocolKey], references: [catalogVersion, programId, key], onDelete: Restrict)
+  therapies CatalogStepTherapy[]
+  @@id([catalogVersion, programId, protocolKey, position])
+  @@map("catalog_protocol_step")
+}
+
+model CatalogTherapy {
+  catalogVersion String @map("catalog_version")
+  catalog MembershipCatalog @relation(fields: [catalogVersion], references: [version], onDelete: Restrict)
+  therapyId String @map("therapy_id")
+  name String
+  steps CatalogStepTherapy[]
+  @@id([catalogVersion, therapyId])
+  @@map("catalog_therapy")
+}
+
+model CatalogStepTherapy {
+  catalogVersion String @map("catalog_version")
+  programId String @map("program_id")
+  protocolKey String @map("protocol_key")
+  position Int
+  therapyId String @map("therapy_id")
+  step CatalogProtocolStep @relation(fields: [catalogVersion, programId, protocolKey, position], references: [catalogVersion, programId, protocolKey, position], onDelete: Restrict)
+  therapy CatalogTherapy @relation(fields: [catalogVersion, therapyId], references: [catalogVersion, therapyId], onDelete: Restrict)
+  @@id([catalogVersion, programId, protocolKey, position, therapyId])
+  @@map("catalog_step_therapy")
+}
+
+model MembershipPaymentReceipt {
+  id           String @id @default(uuid()) @db.Uuid
+  membershipId String @unique @map("membership_id") @db.Uuid
+  membership   Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  provider     String
+  paymentId    String @map("payment_id")
+  verifiedAt   DateTime @default(now()) @map("verified_at") @db.Timestamp(3)
+  @@unique([provider, paymentId])
+  @@map("membership_payment_receipt")
+}
+
+model MembershipAllowance {
+  id             String @id @default(uuid()) @db.Uuid
+  membershipId   String @map("membership_id") @db.Uuid
+  membership     Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  participantId  String @map("participant_id") @db.Uuid
+  participant    MemberParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  monthIndex     Int @map("month_index")
+  startsAt       DateTime @map("starts_at") @db.Timestamp(3)
+  endsAt         DateTime @map("ends_at") @db.Timestamp(3)
+  included       Int
+  used           Int @default(0)
+  attendance     MembershipAttendance[]
+  @@unique([membershipId, participantId, monthIndex])
+  @@map("membership_allowance")
+}
+
+model MembershipAttendance {
+  id          String @id @default(uuid()) @db.Uuid
+  allowanceId String @map("allowance_id") @db.Uuid
+  allowance   MembershipAllowance @relation(fields: [allowanceId], references: [id], onDelete: Cascade)
+  bookingId   String @map("booking_id")
+  participantId String @map("participant_id") @db.Uuid
+  attendedAt  DateTime @map("attended_at") @db.Timestamp(3)
+  credit      MemberCredit?
+  @@unique([participantId, bookingId])
+  @@map("membership_attendance")
+}
+
+model MemberCreditProgress {
+  participantId String @map("participant_id") @db.Uuid
+  participant MemberParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  programId String @map("program_id")
+  sessions Int @default(0)
+  @@id([participantId, programId])
+  @@map("member_credit_progress")
+}
+
+model MemberCredit {
+  id String @id @default(uuid()) @db.Uuid
+  participantId String @map("participant_id") @db.Uuid
+  participant MemberParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  attendanceId String @unique @map("attendance_id") @db.Uuid
+  attendance MembershipAttendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  points Int
+  reason String
+  earnedAt DateTime @map("earned_at") @db.Timestamp(3)
+  expiresAt DateTime @map("expires_at") @db.Timestamp(3)
+  @@index([participantId, expiresAt])
+  @@map("member_credit")
+}
+
+model MembershipRecurring {
+  id String @id @default(uuid()) @db.Uuid
+  membershipId String @unique @map("membership_id") @db.Uuid
+  membership Membership @relation("OriginalMembership", fields: [membershipId], references: [id], onDelete: Cascade)
+  currentMembershipId String @map("current_membership_id") @db.Uuid
+  renewals Membership[] @relation("RenewedMemberships")
+  status String @default("PENDING_SETUP")
+  provider String?
+  mandateId String? @map("mandate_id")
+  cycle Int @default(0)
+  nextBillingAt DateTime? @map("next_billing_at") @db.Timestamp(3)
+  nextAttemptAt DateTime? @map("next_attempt_at") @db.Timestamp(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(3)
+  @@unique([provider, mandateId])
+  @@index([status, nextBillingAt])
+  @@map("membership_recurring")
 }
 model Session {
   id        String   @id

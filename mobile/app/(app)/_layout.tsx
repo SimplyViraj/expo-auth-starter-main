@@ -24,7 +24,6 @@ export default function AppLayout() {
 
   return (
     <Stack
-      initialRouteName={phase === 'needs-onboarding' ? '(onboarding)' : '(tabs)'}
       screenOptions={{
         headerShown: true,
         headerBackButtonDisplayMode: 'minimal',
@@ -43,6 +42,7 @@ export default function AppLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="dashboard" options={{ headerShown: false }} />
         <Stack.Screen name="settings" options={{ title: 'Settings', headerLeft: backButton }} />
+        <Stack.Screen name="memberships" options={{ title: 'Memberships', headerLeft: backButton }} />
         <Stack.Screen name="delete-account" options={{ title: 'Delete account', headerLeft: backButton }} />
         <Stack.Screen name="biometric-lock" options={{ title: 'App lock', headerLeft: backButton }} />
       </Stack.Protected>

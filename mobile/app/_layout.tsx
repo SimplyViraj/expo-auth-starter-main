@@ -28,7 +28,6 @@ function RootNavigator() {
   const { colors, isReady: isThemeReady, resolvedTheme } = useAppTheme();
   const isStarting =
     (phase === 'checking' && !isInitialSessionUnavailable) || !isBiometricReady || !isThemeReady;
-  const initialRouteName = phase === 'signed-out' ? '(auth)' : '(app)';
 
   useEffect(() => {
     if (Platform.OS !== 'web' && !isStarting) {
@@ -68,7 +67,6 @@ function RootNavigator() {
     <>
       <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
       <Stack
-        initialRouteName={initialRouteName}
         screenOptions={{
           animation: 'none',
           headerShown: false,

@@ -36,7 +36,7 @@ export function Button({ label, variant = 'primary', size = 'md', icon, iconPosi
           justifyContent: 'center',
           borderWidth: 1,
           borderColor: current.borderColor,
-          borderRadius: radius.pill,
+          borderRadius: radius.md,
           paddingHorizontal: dimensions.paddingHorizontal,
           backgroundColor: current.backgroundColor,
           opacity: isDisabled ? 0.56 : pressed ? motion.opacity.pressed : 1,
@@ -48,7 +48,7 @@ export function Button({ label, variant = 'primary', size = 'md', icon, iconPosi
       {buttonIcon && iconPosition === 'left' ? <Icon name={buttonIcon} color={current.foreground} size={18} /> : null}
       <AppText
         numberOfLines={1}
-        style={{ color: current.foreground, flexShrink: 1, fontWeight: '900', textAlign: 'center' }}>
+        style={{ color: current.foreground, flexShrink: 1, fontWeight: '500', textAlign: 'center' }}>
         {label}
       </AppText>
       {buttonIcon && iconPosition === 'right' ? <Icon name={buttonIcon} color={current.foreground} size={18} /> : null}
@@ -94,7 +94,7 @@ function getButtonVariantStyles(colors: ThemeColors) {
 function getButtonSizeStyles(spacing: ThemeSpacing) {
   return {
     sm: { minHeight: 40, paddingHorizontal: spacing.md },
-    md: { minHeight: 50, paddingHorizontal: spacing.lg },
-    lg: { minHeight: 58, paddingHorizontal: spacing.xl },
+    md: { minHeight: 46, paddingHorizontal: spacing.lg },
+    lg: { minHeight: 50, paddingHorizontal: spacing.xl },
   } as const;
 }
